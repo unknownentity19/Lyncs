@@ -370,7 +370,7 @@ export default function ModernSaaSDashboard() {
                   T
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="text-sm font-medium text-gray-900">Talha</p>
+                  <p className="text-sm font-medium text-gray-900">User</p>
                   <p className="text-xs text-gray-500">Premium</p>
                 </div>
                 <ChevronDown size={16} className="text-gray-400" />
