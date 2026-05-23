@@ -12,6 +12,12 @@
   --accent-purple: #f3e8ff;
   --accent-pink: #fce7f3;
   --accent-blue: #dbeafe;
+
+  /* Brand gradient stops (used by gradient-text, aurora, glow, ring) */
+  --brand-1: #6366f1; /* indigo */
+  --brand-2: #ec4899; /* pink */
+  --brand-3: #f59e0b; /* amber */
+  --brand-4: #22d3ee; /* cyan */
 }
 
 @theme inline {
@@ -37,28 +43,316 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* Scrollbar styling */
+/* ─── Scrollbar ─────────────────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
+  height: 8px;
 }
-
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
   background: #d1d5db;
-  border-radius: 3px;
+  border-radius: 999px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
 }
 
-/* Selection styling */
+/* ─── Selection ─────────────────────────────────────────────── */
 ::selection {
   background: #0a0a0a;
   color: #ffffff;
+}
+
+/* ─── Keyframes ─────────────────────────────────────────────── */
+@keyframes float-slow {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(0, -16px, 0) scale(1.03); }
+}
+@keyframes float-x {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(14px, -10px, 0); }
+}
+@keyframes float-y {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(-12px, 14px, 0); }
+}
+@keyframes blob {
+  0%, 100% { border-radius: 42% 58% 65% 35% / 40% 45% 55% 60%; }
+  50% { border-radius: 60% 40% 35% 65% / 55% 60% 40% 45%; }
+}
+@keyframes pan-gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(220%); }
+}
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55); }
+  70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translate3d(0, 14px, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+@keyframes bounce-x {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(3px); }
+}
+
+/* ─── Utility classes ───────────────────────────────────────── */
+
+/* Animated brand gradient text */
+.gradient-text {
+  background: linear-gradient(
+    100deg,
+    var(--brand-1) 0%,
+    var(--brand-2) 35%,
+    var(--brand-3) 65%,
+    var(--brand-4) 100%
+  );
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: pan-gradient 9s ease-in-out infinite;
+}
+
+/* Static brand gradient (no animation, for borders/buttons) */
+.gradient-brand {
+  background: linear-gradient(
+    100deg,
+    var(--brand-1),
+    var(--brand-2) 45%,
+    var(--brand-3) 80%
+  );
+}
+
+/* Glassmorphism card */
+.glass {
+  background: rgba(255, 255, 255, 0.65);
+  -webkit-backdrop-filter: saturate(180%) blur(18px);
+  backdrop-filter: saturate(180%) blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+/* Faint pixel grid */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, rgba(15, 23, 42, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(15, 23, 42, 0.06) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+.bg-grid-fade {
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 35%, #000 40%, transparent 100%);
+          mask-image: radial-gradient(ellipse 70% 60% at 50% 35%, #000 40%, transparent 100%);
+}
+
+/* Aurora blobs (drop into a relatively-positioned wrapper). */
+.aurora {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.aurora__blob {
+  position: absolute;
+  width: 520px;
+  height: 520px;
+  filter: blur(70px);
+  opacity: 0.55;
+  will-change: transform;
+}
+.aurora__blob--a {
+  top: -160px; left: -120px;
+  background: radial-gradient(circle at 30% 30%, #c7d2fe 0%, transparent 60%);
+  animation: float-slow 14s ease-in-out infinite;
+}
+.aurora__blob--b {
+  top: -120px; right: -140px;
+  background: radial-gradient(circle at 70% 30%, #fbcfe8 0%, transparent 60%);
+  animation: float-x 17s ease-in-out infinite;
+}
+.aurora__blob--c {
+  bottom: -180px; left: 30%;
+  background: radial-gradient(circle at 50% 70%, #bae6fd 0%, transparent 60%);
+  animation: float-y 19s ease-in-out infinite;
+}
+
+/* Soft hover glow ring */
+.hover-glow {
+  transition: box-shadow 250ms ease, transform 250ms ease;
+}
+.hover-glow:hover {
+  box-shadow:
+    0 12px 32px -16px rgba(99, 102, 241, 0.35),
+    0 0 0 1px rgba(99, 102, 241, 0.18);
+  transform: translateY(-2px);
+}
+
+/* Shine sweep on dark CTA buttons */
+.btn-shine {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.btn-shine::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.45) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.9s ease;
+  pointer-events: none;
+}
+.btn-shine:hover::before {
+  transform: translateX(100%);
+}
+
+/* Animated link underline */
+.link-underline {
+  position: relative;
+}
+.link-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  height: 1.5px;
+  width: 100%;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right center;
+  transition: transform 280ms ease;
+}
+.link-underline:hover::after,
+.link-underline[data-active="true"]::after {
+  transform: scaleX(1);
+  transform-origin: left center;
+}
+
+/* Live pulse dot */
+.dot-pulse {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #22c55e;
+  animation: pulse-ring 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Marquee row */
+.marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 38s linear infinite;
+}
+.marquee-mask {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+
+/* Animated gradient border (apply to a wrapper div) */
+.gradient-ring {
+  position: relative;
+  isolation: isolate;
+}
+.gradient-ring::before {
+  content: "";
+  position: absolute;
+  inset: -1.5px;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: linear-gradient(
+    130deg,
+    var(--brand-1),
+    var(--brand-2),
+    var(--brand-3),
+    var(--brand-4),
+    var(--brand-1)
+  );
+  background-size: 300% 300%;
+  animation: pan-gradient 8s ease-in-out infinite;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Spotlight reveal on hover (set --x and --y from JS, else center) */
+.spotlight {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    420px circle at var(--x, 50%) var(--y, 0%),
+    rgba(99, 102, 241, 0.10),
+    transparent 45%
+  );
+  opacity: 0;
+  transition: opacity 250ms ease;
+  pointer-events: none;
+}
+.spotlight:hover::before {
+  opacity: 1;
+}
+
+/* Float chip util used for hero badges */
+.float-chip {
+  animation: float-slow 7s ease-in-out infinite;
+}
+.float-chip-delayed {
+  animation: float-slow 9s ease-in-out infinite;
+  animation-delay: 1.5s;
+}
+
+/* Bounce arrow on hover (apply to icon inside a group) */
+.group:hover .arrow-bounce {
+  animation: bounce-x 0.8s ease-in-out infinite;
+}
+
+/* Slow spin */
+.animate-spin-slow {
+  animation: spin-slow 18s linear infinite;
+}
+
+/* Reduced motion respects */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
