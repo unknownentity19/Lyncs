@@ -20,7 +20,7 @@ export default function BrandLogo({
       alt="Lyncs logo"
       width={852}
       height={320}
-      priority={eager}
+      preload={eager}
       loading={eager ? "eager" : "lazy"}
       className={`h-10 w-auto object-contain ${imageClassName}`.trim()}
     />
