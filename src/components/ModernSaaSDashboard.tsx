@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import BrandLogo from "@/components/BrandLogo";
 import AnimatedCounter from "@/components/AnimatedCounter";
@@ -21,8 +21,9 @@ import {
   FileText,
   LayoutDashboard,
   LineChart,
-  MessageSquare,
+  Mail,
   Menu,
+  MessageSquare,
   Percent,
   Plus,
   Search,
@@ -67,11 +68,13 @@ interface Application {
 }
 
 interface NavItem {
-  id: string;
+  id: NavId;
   label: string;
   icon: LucideIcon;
   badge?: number;
 }
+
+type NavId = "dashboard" | "browse" | "applications" | "inbox" | "tracker";
 
 interface DashboardStat {
   label: string;
@@ -91,8 +94,25 @@ interface ActivityEvent {
   time: string;
 }
 
+interface InboxMessage {
+  id: string;
+  from: string;
+  company: string;
+  subject: string;
+  preview: string;
+  time: string;
+  unread: boolean;
+}
+
+type DialogId =
+  | "newSearch"
+  | "upgrade"
+  | "settings"
+  | "inbox"
+  | null;
+
 /* -------------------------------------------------------------------------- */
-/*  Small pieces                                                              */
+/*  Pieces                                                                    */
 /* -------------------------------------------------------------------------- */
 
 /**
@@ -143,7 +163,7 @@ function MatchRing({ percentage, id }: { percentage: number; id: string }) {
           transition={{ duration: 1.4, ease: "easeOut" }}
         />
       </svg>
-      <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold text-gray-900">
+      <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold tabular-nums text-gray-900">
         {percentage}%
       </span>
     </div>
@@ -255,12 +275,12 @@ function StatusPill({ status }: { status: ApplicationStatus }) {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Static seed data (kept local so the demo dashboard can render statically) */
+/*  Seed data                                                                 */
 /* -------------------------------------------------------------------------- */
 
 const topMatches: TopMatch[] = [
   {
-    id: "1",
+    id: "stripe-sfe",
     company: "Stripe",
     role: "Senior Frontend Engineer",
     matchPercentage: 96,
@@ -268,7 +288,7 @@ const topMatches: TopMatch[] = [
     salary: "$180\u2013220k",
   },
   {
-    id: "2",
+    id: "notion-fs",
     company: "Notion",
     role: "Full-Stack Engineer",
     matchPercentage: 92,
@@ -276,7 +296,7 @@ const topMatches: TopMatch[] = [
     salary: "$160\u2013195k",
   },
   {
-    id: "3",
+    id: "linear-pe",
     company: "Linear",
     role: "Product Engineer",
     matchPercentage: 88,
@@ -284,7 +304,7 @@ const topMatches: TopMatch[] = [
     salary: "$155\u2013190k",
   },
   {
-    id: "4",
+    id: "figma-ds",
     company: "Figma",
     role: "Design Systems Engineer",
     matchPercentage: 94,
@@ -293,9 +313,9 @@ const topMatches: TopMatch[] = [
   },
 ];
 
-const applicationsData: Application[] = [
+const initialApplications: Application[] = [
   {
-    id: "1",
+    id: "app-stripe",
     company: "Stripe",
     position: "Senior Frontend Engineer",
     resume: true,
@@ -304,7 +324,7 @@ const applicationsData: Application[] = [
     appliedDate: "2h ago",
   },
   {
-    id: "2",
+    id: "app-notion",
     company: "Notion",
     position: "Full Stack Engineer",
     resume: true,
@@ -313,7 +333,7 @@ const applicationsData: Application[] = [
     appliedDate: "1h ago",
   },
   {
-    id: "3",
+    id: "app-linear",
     company: "Linear",
     position: "Product Engineer",
     resume: false,
@@ -322,7 +342,7 @@ const applicationsData: Application[] = [
     appliedDate: "45m ago",
   },
   {
-    id: "4",
+    id: "app-figma",
     company: "Figma",
     position: "Design Systems Engineer",
     resume: true,
@@ -331,7 +351,7 @@ const applicationsData: Application[] = [
     appliedDate: "30m ago",
   },
   {
-    id: "5",
+    id: "app-vercel",
     company: "Vercel",
     position: "Backend Engineer",
     resume: true,
@@ -340,7 +360,7 @@ const applicationsData: Application[] = [
     appliedDate: "15m ago",
   },
   {
-    id: "6",
+    id: "app-ramp",
     company: "Ramp",
     position: "Senior Software Engineer",
     resume: true,
@@ -393,7 +413,7 @@ const stats: DashboardStat[] = [
   },
 ];
 
-const activityEvents: ActivityEvent[] = [
+const initialActivityEvents: ActivityEvent[] = [
   {
     id: "a1",
     icon: CheckCircle2,
@@ -444,11 +464,56 @@ const activityEvents: ActivityEvent[] = [
   },
 ];
 
+const initialInboxMessages: InboxMessage[] = [
+  {
+    id: "m1",
+    from: "Sarah Lee",
+    company: "Stripe",
+    subject: "Quick chat next week?",
+    preview:
+      "Hi Alex \u2014 saw your application come through. Loved your work on the design system at \u2026",
+    time: "12m ago",
+    unread: true,
+  },
+  {
+    id: "m2",
+    from: "Marcus Tan",
+    company: "Linear",
+    subject: "Take-home walkthrough",
+    preview:
+      "Thanks for the writeup. Could you walk me through your approach to the multi-cursor edge case?",
+    time: "1h ago",
+    unread: true,
+  },
+  {
+    id: "m3",
+    from: "Priya Mehta",
+    company: "Figma",
+    subject: "Onsite scheduling",
+    preview: "We\u2019d love to bring you in onsite next Tuesday. Are mornings better than afternoons?",
+    time: "3h ago",
+    unread: true,
+  },
+];
+
 const TONE_DOT: Record<ActivityEvent["tone"], string> = {
   ok: "bg-emerald-500",
   info: "bg-indigo-500",
   warn: "bg-amber-500",
   fail: "bg-rose-500",
+};
+
+/**
+ * Map a sidebar nav id to the in-page section we want to scroll to.
+ * `inbox` is the exception: it has no in-page section, so we open the
+ * inbox modal instead and the caller short-circuits the scroll.
+ */
+const NAV_TARGET: Record<NavId, string | null> = {
+  dashboard: "section-greeting",
+  browse: "section-top-matches",
+  applications: "section-applications",
+  inbox: null,
+  tracker: "section-kpi",
 };
 
 /* -------------------------------------------------------------------------- */
@@ -458,15 +523,34 @@ const TONE_DOT: Record<ActivityEvent["tone"], string> = {
 export default function ModernSaaSDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeFilter, setActiveFilter] = useState<string>("all");
-  const [activeNav, setActiveNav] = useState("dashboard");
+  const [activeNav, setActiveNav] = useState<NavId>("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   const [appliedMatches, setAppliedMatches] = useState<string[]>([]);
   const [selectedApplication, setSelectedApplication] =
     useState<Application | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [bellOpen, setBellOpen] = useState(false);
+  const [openDialog, setOpenDialog] = useState<DialogId>(null);
   const [notice, setNotice] = useState<string | null>(
     "47 active applications are ready for review."
   );
+
+  // Real state for things that mutate.
+  const [applications, setApplications] = useState<Application[]>(
+    initialApplications
+  );
+  const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>(
+    initialActivityEvents
+  );
+  const [inboxMessages, setInboxMessages] = useState<InboxMessage[]>(
+    initialInboxMessages
+  );
+  const [savedSearches, setSavedSearches] = useState<string[]>([
+    "senior frontend",
+    "remote · US",
+    "design systems",
+  ]);
+  const [planTier, setPlanTier] = useState<"Pro" | "Power">("Pro");
 
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -480,43 +564,217 @@ export default function ModernSaaSDashboard() {
       if (e.key === "Escape") {
         setSelectedApplication(null);
         setProfileOpen(false);
+        setBellOpen(false);
+        setOpenDialog(null);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  /* ---- Mutations ----------------------------------------------------- */
+
+  const prependEvent = useCallback((event: Omit<ActivityEvent, "time">) => {
+    setActivityEvents((current) => [
+      { ...event, time: "just now" },
+      ...current,
+    ]);
+  }, []);
+
+  /**
+   * Promote a top-match into the applications table. If the company
+   * already exists in the table we just bump it back to "queued"
+   * instead of creating a duplicate row.
+   */
+  const queueMatch = useCallback(
+    (match: TopMatch) => {
+      let didCreate = false;
+      setApplications((current) => {
+        const existingIdx = current.findIndex(
+          (a) => a.company === match.company
+        );
+        if (existingIdx >= 0) {
+          const next = [...current];
+          next[existingIdx] = {
+            ...next[existingIdx],
+            status: "queued",
+            appliedDate: "just now",
+          };
+          return next;
+        }
+        didCreate = true;
+        return [
+          {
+            id: `app-${match.id}-${Date.now()}`,
+            company: match.company,
+            position: match.role,
+            resume: true,
+            coverLetter: false,
+            status: "queued",
+            appliedDate: "just now",
+          },
+          ...current,
+        ];
+      });
+      setAppliedMatches((current) =>
+        current.includes(match.id) ? current : [...current, match.id]
+      );
+      prependEvent({
+        id: `evt-queue-${match.id}-${Date.now()}`,
+        icon: Send,
+        title: `Queued ${match.company} application`,
+        meta: didCreate
+          ? `${match.role} \u00b7 added to pipeline`
+          : `${match.role} \u00b7 re-queued for submission`,
+        tone: "info",
+      });
+    },
+    [prependEvent]
+  );
+
+  const queueAllMatches = useCallback(() => {
+    topMatches.forEach((m) => queueMatch(m));
+    prependEvent({
+      id: `evt-queue-all-${Date.now()}`,
+      icon: Zap,
+      title: `Queued ${topMatches.length} top matches`,
+      meta: "Daily batch \u00b7 ready to submit",
+      tone: "info",
+    });
+    setNotice(
+      `${topMatches.length} top matches queued. Hit "Submit all" to push them out.`
+    );
+  }, [prependEvent, queueMatch]);
+
+  const submitAllInFlight = useCallback(() => {
+    let count = 0;
+    setApplications((current) =>
+      current.map((a) => {
+        if (a.status === "queued" || a.status === "pending") {
+          count += 1;
+          return { ...a, status: "submitted", appliedDate: "just now" };
+        }
+        return a;
+      })
+    );
+    if (count > 0) {
+      prependEvent({
+        id: `evt-submit-${Date.now()}`,
+        icon: CheckCircle2,
+        title: `Submitted ${count} application${count === 1 ? "" : "s"}`,
+        meta: "Pushed to ATS pipelines",
+        tone: "ok",
+      });
+      setNotice(
+        `${count} application${count === 1 ? "" : "s"} submitted just now.`
+      );
+    } else {
+      setNotice("Nothing in flight to submit. Queue some matches first.");
+    }
+  }, [prependEvent]);
+
+  const markReviewed = useCallback(
+    (app: Application) => {
+      setApplications((current) =>
+        current.map((a) =>
+          a.id === app.id
+            ? { ...a, status: "submitted", appliedDate: "just now" }
+            : a
+        )
+      );
+      prependEvent({
+        id: `evt-review-${app.id}-${Date.now()}`,
+        icon: CheckCircle2,
+        title: `Reviewed ${app.company} \u2014 submitted`,
+        meta: app.position,
+        tone: "ok",
+      });
+      setNotice(`${app.company} application marked reviewed and submitted.`);
+    },
+    [prependEvent]
+  );
+
+  const dismissMessage = useCallback((id: string) => {
+    setInboxMessages((current) => current.filter((m) => m.id !== id));
+  }, []);
+
+  const replyToMessage = useCallback(
+    (msg: InboxMessage) => {
+      setInboxMessages((current) =>
+        current.map((m) => (m.id === msg.id ? { ...m, unread: false } : m))
+      );
+      prependEvent({
+        id: `evt-reply-${msg.id}-${Date.now()}`,
+        icon: Mail,
+        title: `Drafting reply to ${msg.from}`,
+        meta: `${msg.company} \u00b7 ${msg.subject}`,
+        tone: "info",
+      });
+      setNotice(`Drafting reply to ${msg.from} at ${msg.company}\u2026`);
+    },
+    [prependEvent]
+  );
+
+  const markAllNotificationsRead = useCallback(() => {
+    setBellOpen(false);
+    setNotice("All notifications marked as read.");
+  }, []);
+
+  /* ---- Navigation helpers ------------------------------------------- */
+
+  const scrollToSection = useCallback((id: string) => {
+    if (typeof window === "undefined") return;
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
+  const handleNavClick = useCallback(
+    (item: NavItem) => {
+      setActiveNav(item.id);
+      if (item.id === "inbox") {
+        setOpenDialog("inbox");
+        return;
+      }
+      if (item.id === "applications") setActiveFilter("all");
+      const target = NAV_TARGET[item.id];
+      if (target) scrollToSection(target);
+    },
+    [scrollToSection]
+  );
+
+  /* ---- Derived ------------------------------------------------------ */
+
   const filterTabs = useMemo(
     () => [
-      { id: "all", label: "All", count: applicationsData.length },
+      { id: "all", label: "All", count: applications.length },
       {
         id: "in-flight",
         label: "In flight",
-        count: applicationsData.filter(
+        count: applications.filter(
           (a) => a.status === "pending" || a.status === "queued"
         ).length,
       },
       {
         id: "needs-you",
         label: "Needs you",
-        count: applicationsData.filter((a) => a.status === "needs_review")
-          .length,
+        count: applications.filter((a) => a.status === "needs_review").length,
       },
       {
         id: "failed",
         label: "Failed",
-        count: applicationsData.filter((a) => a.status === "failed").length,
+        count: applications.filter((a) => a.status === "failed").length,
       },
       {
         id: "submitted",
         label: "Submitted",
-        count: applicationsData.filter((a) => a.status === "submitted").length,
+        count: applications.filter((a) => a.status === "submitted").length,
       },
     ],
-    []
+    [applications]
   );
 
-  const filteredApplications = applicationsData.filter((app) => {
+  const filteredApplications = applications.filter((app) => {
     const matchesFilter =
       activeFilter === "all" ||
       (activeFilter === "in-flight" &&
@@ -536,9 +794,13 @@ export default function ModernSaaSDashboard() {
 
   const activeNavItem = navItems.find((item) => item.id === activeNav);
 
-  const submittedTotal = applicationsData.filter(
+  const submittedTotal = applications.filter(
     (a) => a.status === "submitted"
   ).length;
+
+  const unreadCount = inboxMessages.filter((m) => m.unread).length;
+
+  /* ---- Render ------------------------------------------------------- */
 
   return (
     <div className="flex h-screen w-full bg-gray-50 text-gray-900">
@@ -562,7 +824,7 @@ export default function ModernSaaSDashboard() {
                     Lyncs Workspace
                   </p>
                   <p className="text-[11px] text-gray-500">
-                    Premium &middot; monthly
+                    {planTier} &middot; monthly
                   </p>
                 </div>
                 <ChevronDown
@@ -577,10 +839,7 @@ export default function ModernSaaSDashboard() {
               <motion.button
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => {
-                  setAppliedMatches(topMatches.map((m) => m.id));
-                  setNotice("All top matches queued for submission.");
-                }}
+                onClick={queueAllMatches}
                 className="group btn-shine flex w-full items-center justify-between rounded-xl bg-gradient-to-r from-indigo-600 via-fuchsia-600 to-amber-500 px-4 py-2.5 text-white shadow-[0_8px_24px_-12px_rgba(99,102,241,0.6)]"
               >
                 <span className="flex items-center gap-2 text-sm font-semibold">
@@ -590,7 +849,7 @@ export default function ModernSaaSDashboard() {
                 <span className="text-xs opacity-80">&#8984; &#8629;</span>
               </motion.button>
               <button
-                onClick={() => setNotice("New search created.")}
+                onClick={() => setOpenDialog("newSearch")}
                 className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-gray-300 bg-white py-2 text-xs font-medium text-gray-600 hover:border-gray-400 hover:text-gray-900 transition-colors"
               >
                 <Plus size={13} />
@@ -607,13 +866,13 @@ export default function ModernSaaSDashboard() {
                 {navItems.slice(0, 4).map((item) => (
                   <NavLink
                     key={item.id}
-                    item={item}
+                    item={
+                      item.id === "inbox"
+                        ? { ...item, badge: unreadCount }
+                        : item
+                    }
                     active={item.id === activeNav}
-                    onClick={() => {
-                      setActiveNav(item.id);
-                      setNotice(`${item.label} selected.`);
-                      if (item.id === "applications") setActiveFilter("all");
-                    }}
+                    onClick={() => handleNavClick(item)}
                   />
                 ))}
               </div>
@@ -627,10 +886,7 @@ export default function ModernSaaSDashboard() {
                     key={item.id}
                     item={item}
                     active={item.id === activeNav}
-                    onClick={() => {
-                      setActiveNav(item.id);
-                      setNotice(`${item.label} selected.`);
-                    }}
+                    onClick={() => handleNavClick(item)}
                   />
                 ))}
               </div>
@@ -640,28 +896,32 @@ export default function ModernSaaSDashboard() {
             <div className="border-t border-gray-200 p-4">
               <div className="rounded-xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 p-3.5">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-gray-900">Pro plan</p>
+                  <p className="text-xs font-semibold text-gray-900">
+                    {planTier} plan
+                  </p>
                   <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600">
                     <span className="dot-pulse h-1.5 w-1.5" />
                     Active
                   </span>
                 </div>
                 <p className="mt-1 text-[11px] text-gray-500">
-                  127 / 200 applications used
+                  {planTier === "Power"
+                    ? "Unlimited applications"
+                    : "127 / 200 applications used"}
                 </p>
                 <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-gray-100">
                   <motion.div
                     initial={{ width: 0 }}
-                    animate={{ width: "63.5%" }}
+                    animate={{ width: planTier === "Power" ? "100%" : "63.5%" }}
                     transition={{ duration: 1.1, ease: "easeOut" }}
                     className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-amber-500"
                   />
                 </div>
                 <button
-                  onClick={() => setNotice("Upgrade flow launched.")}
+                  onClick={() => setOpenDialog("upgrade")}
                   className="mt-3 flex w-full items-center justify-center gap-1 rounded-lg border border-gray-200 bg-white py-1.5 text-[11px] font-semibold text-gray-700 hover:border-gray-300 hover:text-gray-900 transition-colors"
                 >
-                  Upgrade
+                  {planTier === "Power" ? "Manage plan" : "Upgrade"}
                   <ArrowUpRight size={11} />
                 </button>
               </div>
@@ -696,23 +956,44 @@ export default function ModernSaaSDashboard() {
                     transition={{ duration: 0.15 }}
                     className="mt-2 overflow-hidden rounded-lg border border-gray-200 bg-white p-1 shadow-lg"
                   >
-                    {[
-                      "Account settings",
-                      "Billing",
-                      "Keyboard shortcuts",
-                      "Sign out",
-                    ].map((label) => (
-                      <button
-                        key={label}
-                        onClick={() => {
-                          setNotice(`${label} selected.`);
-                          setProfileOpen(false);
-                        }}
-                        className="block w-full rounded-md px-3 py-1.5 text-left text-[13px] text-gray-700 hover:bg-gray-50"
-                      >
-                        {label}
-                      </button>
-                    ))}
+                    <button
+                      onClick={() => {
+                        setProfileOpen(false);
+                        setOpenDialog("settings");
+                      }}
+                      className="block w-full rounded-md px-3 py-1.5 text-left text-[13px] text-gray-700 hover:bg-gray-50"
+                    >
+                      Account settings
+                    </button>
+                    <button
+                      onClick={() => {
+                        setProfileOpen(false);
+                        setOpenDialog("upgrade");
+                      }}
+                      className="block w-full rounded-md px-3 py-1.5 text-left text-[13px] text-gray-700 hover:bg-gray-50"
+                    >
+                      Billing
+                    </button>
+                    <button
+                      onClick={() => {
+                        setProfileOpen(false);
+                        setNotice(
+                          "Shortcuts: \u2318K search \u00b7 \u2318\u21B5 apply all \u00b7 Esc closes panels."
+                        );
+                      }}
+                      className="block w-full rounded-md px-3 py-1.5 text-left text-[13px] text-gray-700 hover:bg-gray-50"
+                    >
+                      Keyboard shortcuts
+                    </button>
+                    <button
+                      onClick={() => {
+                        setProfileOpen(false);
+                        setNotice("Signed out. (Demo)");
+                      }}
+                      className="block w-full rounded-md px-3 py-1.5 text-left text-[13px] text-rose-600 hover:bg-rose-50"
+                    >
+                      Sign out
+                    </button>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -762,16 +1043,72 @@ export default function ModernSaaSDashboard() {
               </span>
             </div>
 
+            {/* Bell + popover */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setBellOpen((o) => !o);
+                  setProfileOpen(false);
+                }}
+                className="relative rounded-lg p-2 text-gray-600 hover:bg-gray-100 transition-colors"
+                aria-label="Notifications"
+              >
+                <Bell size={17} />
+                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
+              </button>
+              <AnimatePresence>
+                {bellOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-11 w-80 origin-top-right overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl"
+                  >
+                    <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+                      <p className="text-sm font-semibold">Notifications</p>
+                      <button
+                        onClick={markAllNotificationsRead}
+                        className="text-[11px] font-semibold text-gray-500 hover:text-gray-900"
+                      >
+                        Mark all read
+                      </button>
+                    </div>
+                    <ul className="max-h-80 overflow-y-auto">
+                      {activityEvents.slice(0, 6).map((ev) => {
+                        const Icon = ev.icon;
+                        return (
+                          <li
+                            key={ev.id}
+                            className="flex gap-3 border-b border-gray-100 px-4 py-3 last:border-0 hover:bg-gray-50"
+                          >
+                            <span
+                              className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-white ${TONE_DOT[ev.tone]}`}
+                            >
+                              <Icon size={11} />
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <p className="truncate text-[13px] font-medium text-gray-900">
+                                {ev.title}
+                              </p>
+                              <p className="truncate text-[11px] text-gray-500">
+                                {ev.meta}
+                              </p>
+                              <p className="mt-0.5 text-[10px] text-gray-400">
+                                {ev.time}
+                              </p>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             <button
-              onClick={() => setNotice("You have 3 new recruiter messages.")}
-              className="relative rounded-lg p-2 text-gray-600 hover:bg-gray-100 transition-colors"
-              aria-label="Notifications"
-            >
-              <Bell size={17} />
-              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
-            </button>
-            <button
-              onClick={() => setNotice("Settings panel selected.")}
+              onClick={() => setOpenDialog("settings")}
               className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 transition-colors"
               aria-label="Settings"
             >
@@ -791,10 +1128,11 @@ export default function ModernSaaSDashboard() {
           <div className="mx-auto max-w-7xl space-y-8 p-6 sm:p-8">
             {/* Greeting */}
             <motion.section
+              id="section-greeting"
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 sm:p-7"
+              className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 scroll-mt-20"
             >
               <div className="aurora pointer-events-none">
                 <span
@@ -816,13 +1154,14 @@ export default function ModernSaaSDashboard() {
                     Good afternoon, Alex.
                   </h1>
                   <p className="mt-1 text-sm text-gray-600">
-                    {submittedTotal} submissions today &middot; 8s average apply time.
-                    Your agent is still hunting.
+                    <span className="tabular-nums">{submittedTotal}</span>{" "}
+                    submission{submittedTotal === 1 ? "" : "s"} today &middot;
+                    8s average apply time. Your agent is still hunting.
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <button
-                    onClick={() => setNotice("Showing today's plan.")}
+                    onClick={() => scrollToSection("section-kpi")}
                     className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white/90 px-3.5 py-2 text-[13px] font-medium text-gray-700 hover:border-gray-300 hover:bg-white transition-colors"
                   >
                     Today&apos;s plan
@@ -831,10 +1170,7 @@ export default function ModernSaaSDashboard() {
                   <motion.button
                     whileHover={{ y: -1 }}
                     whileTap={{ scale: 0.97 }}
-                    onClick={() => {
-                      setAppliedMatches(topMatches.map((m) => m.id));
-                      setNotice("Submitting all queued applications.");
-                    }}
+                    onClick={submitAllInFlight}
                     className="group btn-shine inline-flex items-center gap-1.5 rounded-full bg-gray-900 px-4 py-2 text-[13px] font-semibold text-white hover:bg-gray-800 transition-colors"
                   >
                     <Zap size={14} />
@@ -876,7 +1212,7 @@ export default function ModernSaaSDashboard() {
             </AnimatePresence>
 
             {/* KPI strip */}
-            <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <section id="section-kpi" className="grid gap-4 scroll-mt-20 sm:grid-cols-2 lg:grid-cols-4">
               {stats.map((stat, i) => (
                 <motion.div
                   key={stat.label}
@@ -910,7 +1246,7 @@ export default function ModernSaaSDashboard() {
             </section>
 
             {/* Top matches */}
-            <section>
+            <section id="section-top-matches" className="scroll-mt-20">
               <div className="mb-4 flex items-end justify-between">
                 <div>
                   <h2 className="text-lg font-semibold">Top matches</h2>
@@ -919,10 +1255,10 @@ export default function ModernSaaSDashboard() {
                   </p>
                 </div>
                 <button
-                  onClick={() => setNotice("Browsing all matches.")}
+                  onClick={() => scrollToSection("section-applications")}
                   className="inline-flex items-center gap-1 text-xs font-semibold text-gray-600 hover:text-gray-900"
                 >
-                  See all
+                  See pipeline
                   <ArrowUpRight size={12} />
                 </button>
               </div>
@@ -956,18 +1292,13 @@ export default function ModernSaaSDashboard() {
                         <span className="rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[10px] font-medium text-gray-600">
                           {match.location}
                         </span>
-                        <span className="rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[10px] font-medium text-gray-600">
+                        <span className="rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[10px] font-medium text-gray-600 tabular-nums">
                           {match.salary}
                         </span>
                       </div>
                       <motion.button
                         whileTap={{ scale: 0.97 }}
-                        onClick={() => {
-                          setAppliedMatches((c) =>
-                            c.includes(match.id) ? c : [...c, match.id]
-                          );
-                          setNotice(`${match.company} application queued.`);
-                        }}
+                        onClick={() => queueMatch(match)}
                         className={`mt-5 inline-flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-[13px] font-semibold transition-all ${
                           queued
                             ? "bg-emerald-600 text-white hover:bg-emerald-700"
@@ -993,7 +1324,10 @@ export default function ModernSaaSDashboard() {
             </section>
 
             {/* Applications + Activity */}
-            <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <section
+              id="section-applications"
+              className="grid gap-6 scroll-mt-20 xl:grid-cols-[minmax(0,1fr)_360px]"
+            >
               {/* Applications panel */}
               <div className="rounded-2xl border border-gray-200 bg-white">
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
@@ -1005,7 +1339,7 @@ export default function ModernSaaSDashboard() {
                   </div>
                   <motion.button
                     whileTap={{ scale: 0.97 }}
-                    onClick={() => setNotice("Submitting all in-flight items.")}
+                    onClick={submitAllInFlight}
                     className="group btn-shine inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 transition-colors"
                   >
                     <Send size={12} />
@@ -1040,7 +1374,7 @@ export default function ModernSaaSDashboard() {
                         )}
                         {tab.label}
                         <span
-                          className={`ml-1.5 ${
+                          className={`ml-1.5 tabular-nums ${
                             active ? "text-white/70" : "text-gray-400"
                           }`}
                         >
@@ -1105,15 +1439,12 @@ export default function ModernSaaSDashboard() {
                               <td className="px-5 py-3.5">
                                 <StatusPill status={app.status} />
                               </td>
-                              <td className="px-5 py-3.5 text-xs text-gray-600">
+                              <td className="px-5 py-3.5 text-xs text-gray-600 tabular-nums">
                                 {app.appliedDate}
                               </td>
                               <td className="px-5 py-3.5">
                                 <button
-                                  onClick={() => {
-                                    setSelectedApplication(app);
-                                    setNotice(`${app.company} details opened.`);
-                                  }}
+                                  onClick={() => setSelectedApplication(app)}
                                   className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:border-gray-300 hover:text-gray-900 transition-colors"
                                 >
                                   <Eye size={12} />
@@ -1135,6 +1466,17 @@ export default function ModernSaaSDashboard() {
                     <p className="text-xs text-gray-500">
                       Try a different filter or clear your search.
                     </p>
+                    {(activeFilter !== "all" || searchQuery) && (
+                      <button
+                        onClick={() => {
+                          setActiveFilter("all");
+                          setSearchQuery("");
+                        }}
+                        className="mt-1 inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1 text-[11px] font-medium text-gray-700 hover:border-gray-300"
+                      >
+                        Reset filters
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -1153,14 +1495,14 @@ export default function ModernSaaSDashboard() {
                 </div>
                 <ol className="relative px-5 py-5">
                   <span className="absolute bottom-5 left-[26px] top-5 w-px bg-gray-200" />
-                  {activityEvents.map((ev, i) => {
+                  {activityEvents.slice(0, 8).map((ev, i) => {
                     const Icon = ev.icon;
                     return (
                       <motion.li
                         key={ev.id}
                         initial={{ opacity: 0, x: -6 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.35, delay: 0.05 * i }}
+                        transition={{ duration: 0.35, delay: 0.04 * i }}
                         className="relative flex gap-3 pb-4 last:pb-0"
                       >
                         <span className="relative z-10 mt-0.5 flex h-7 w-7 items-center justify-center rounded-full bg-white ring-2 ring-white">
@@ -1175,7 +1517,7 @@ export default function ModernSaaSDashboard() {
                             <p className="text-[13px] font-medium text-gray-900">
                               {ev.title}
                             </p>
-                            <span className="text-[10px] text-gray-400">
+                            <span className="text-[10px] text-gray-400 tabular-nums whitespace-nowrap">
                               {ev.time}
                             </span>
                           </div>
@@ -1269,9 +1611,7 @@ export default function ModernSaaSDashboard() {
                 </button>
                 <button
                   onClick={() => {
-                    setNotice(
-                      `${selectedApplication.company} application marked reviewed.`
-                    );
+                    markReviewed(selectedApplication);
                     setSelectedApplication(null);
                   }}
                   className="btn-shine flex-1 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 transition-colors"
@@ -1281,6 +1621,64 @@ export default function ModernSaaSDashboard() {
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Auxiliary dialogs */}
+      <AnimatePresence>
+        {openDialog && (
+          <ModalShell key={openDialog} onClose={() => setOpenDialog(null)}>
+            {openDialog === "newSearch" && (
+              <NewSearchDialog
+                savedSearches={savedSearches}
+                onSubmit={(q) => {
+                  if (q.trim().length === 0) {
+                    setOpenDialog(null);
+                    return;
+                  }
+                  setSavedSearches((current) =>
+                    current.includes(q) ? current : [q, ...current].slice(0, 6)
+                  );
+                  setSearchQuery(q);
+                  setActiveFilter("all");
+                  setActiveNav("browse");
+                  setNotice(`Saved "${q}" and opened it as the active query.`);
+                  setOpenDialog(null);
+                  scrollToSection("section-top-matches");
+                }}
+                onClose={() => setOpenDialog(null)}
+              />
+            )}
+            {openDialog === "upgrade" && (
+              <UpgradeDialog
+                planTier={planTier}
+                onChoose={(tier) => {
+                  setPlanTier(tier);
+                  setNotice(
+                    tier === "Power"
+                      ? "You\u2019re on Power. Unlimited applications unlocked."
+                      : "You\u2019re on Pro. 200 applications / month."
+                  );
+                  setOpenDialog(null);
+                }}
+                onClose={() => setOpenDialog(null)}
+              />
+            )}
+            {openDialog === "settings" && (
+              <SettingsDialog onClose={() => setOpenDialog(null)} />
+            )}
+            {openDialog === "inbox" && (
+              <InboxDialog
+                messages={inboxMessages}
+                onReply={(m) => {
+                  replyToMessage(m);
+                  setOpenDialog(null);
+                }}
+                onDismiss={dismissMessage}
+                onClose={() => setOpenDialog(null)}
+              />
+            )}
+          </ModalShell>
         )}
       </AnimatePresence>
     </div>
@@ -1321,9 +1719,9 @@ function NavLink({
         <Icon size={16} strokeWidth={2} />
         <span className="font-medium">{item.label}</span>
       </span>
-      {item.badge !== undefined && (
+      {item.badge !== undefined && item.badge > 0 && (
         <span
-          className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${
+          className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${
             active ? "bg-white/15 text-white" : "bg-gray-100 text-gray-600"
           }`}
         >
@@ -1381,5 +1779,409 @@ function DetailRow({
         {value}
       </span>
     </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Auxiliary dialogs                                                         */
+/* -------------------------------------------------------------------------- */
+
+function ModalShell({
+  children,
+  onClose,
+}: {
+  children: React.ReactNode;
+  onClose: () => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.18 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 px-4 backdrop-blur-sm"
+    >
+      <button
+        aria-label="Close dialog"
+        onClick={onClose}
+        className="absolute inset-0"
+      />
+      <motion.div
+        initial={{ opacity: 0, y: 16, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 12, scale: 0.97 }}
+        transition={{ duration: 0.22, ease: "easeOut" }}
+        className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
+      >
+        {children}
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function NewSearchDialog({
+  savedSearches,
+  onSubmit,
+  onClose,
+}: {
+  savedSearches: string[];
+  onSubmit: (q: string) => void;
+  onClose: () => void;
+}) {
+  const [query, setQuery] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  return (
+    <>
+      <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+        <div>
+          <h3 className="text-base font-semibold">Start a new search</h3>
+          <p className="text-xs text-gray-500">
+            Saves the query and opens matches.
+          </p>
+        </div>
+        <button
+          aria-label="Close"
+          onClick={onClose}
+          className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+        >
+          <X size={16} />
+        </button>
+      </div>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit(query);
+        }}
+        className="px-6 py-5"
+      >
+        <label className="block text-xs font-medium text-gray-600">
+          Query
+        </label>
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="e.g. senior frontend, remote, $180k+"
+          className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+        />
+
+        {savedSearches.length > 0 && (
+          <>
+            <p className="mt-5 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+              Recent
+            </p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {savedSearches.map((q) => (
+                <button
+                  key={q}
+                  type="button"
+                  onClick={() => onSubmit(q)}
+                  className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[12px] text-gray-700 hover:border-gray-300 hover:text-gray-900"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        <div className="mt-6 flex gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="btn-shine flex-1 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800"
+          >
+            Start search
+          </button>
+        </div>
+      </form>
+    </>
+  );
+}
+
+function UpgradeDialog({
+  planTier,
+  onChoose,
+  onClose,
+}: {
+  planTier: "Pro" | "Power";
+  onChoose: (tier: "Pro" | "Power") => void;
+  onClose: () => void;
+}) {
+  const tiers = [
+    {
+      id: "Pro" as const,
+      price: "$29/mo",
+      cap: "200 applications / month",
+      perks: [
+        "Priority matching",
+        "Cover letter generation",
+        "Recruiter reply routing",
+      ],
+    },
+    {
+      id: "Power" as const,
+      price: "$79/mo",
+      cap: "Unlimited applications",
+      perks: [
+        "Instant match alerts",
+        "MCP / CLI access",
+        "Custom application rules",
+      ],
+    },
+  ];
+
+  return (
+    <>
+      <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+        <div>
+          <h3 className="text-base font-semibold">Manage plan</h3>
+          <p className="text-xs text-gray-500">
+            Currently on {planTier} &middot; switch instantly.
+          </p>
+        </div>
+        <button
+          aria-label="Close"
+          onClick={onClose}
+          className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+        >
+          <X size={16} />
+        </button>
+      </div>
+      <div className="space-y-3 px-6 py-5">
+        {tiers.map((tier) => {
+          const current = tier.id === planTier;
+          return (
+            <button
+              key={tier.id}
+              onClick={() => onChoose(tier.id)}
+              className={`group block w-full rounded-xl border px-4 py-3 text-left transition-colors ${
+                current
+                  ? "border-indigo-300 bg-indigo-50/50"
+                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold">{tier.id}</p>
+                  <p className="text-xs text-gray-500">{tier.cap}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-semibold tabular-nums">
+                    {tier.price}
+                  </p>
+                  {current && (
+                    <p className="text-[10px] font-semibold text-indigo-600">
+                      Current
+                    </p>
+                  )}
+                </div>
+              </div>
+              <ul className="mt-2 grid gap-1 text-[12px] text-gray-600">
+                {tier.perks.map((p) => (
+                  <li key={p} className="flex items-center gap-1.5">
+                    <CheckCircle2 size={12} className="text-emerald-600" />
+                    {p}
+                  </li>
+                ))}
+              </ul>
+            </button>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+function SettingsDialog({ onClose }: { onClose: () => void }) {
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [autoSubmit, setAutoSubmit] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  return (
+    <>
+      <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+        <div>
+          <h3 className="text-base font-semibold">Settings</h3>
+          <p className="text-xs text-gray-500">
+            Preferences for this workspace.
+          </p>
+        </div>
+        <button
+          aria-label="Close"
+          onClick={onClose}
+          className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+        >
+          <X size={16} />
+        </button>
+      </div>
+      <div className="space-y-3 px-6 py-5">
+        <Toggle
+          label="Email notifications"
+          help="Daily digest + interview pings."
+          checked={emailNotifications}
+          onChange={setEmailNotifications}
+        />
+        <Toggle
+          label="Auto-submit at 90%+ match"
+          help="Skip review when fit is above the threshold."
+          checked={autoSubmit}
+          onChange={setAutoSubmit}
+        />
+        <Toggle
+          label="Reduce in-app motion"
+          help="Static fallbacks for animated panels."
+          checked={reduceMotion}
+          onChange={setReduceMotion}
+        />
+      </div>
+      <div className="flex gap-2 border-t border-gray-200 bg-gray-50/60 px-6 py-4">
+        <button
+          onClick={onClose}
+          className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          Done
+        </button>
+      </div>
+    </>
+  );
+}
+
+function Toggle({
+  label,
+  help,
+  checked,
+  onChange,
+}: {
+  label: string;
+  help: string;
+  checked: boolean;
+  onChange: (next: boolean) => void;
+}) {
+  return (
+    <button
+      onClick={() => onChange(!checked)}
+      className="flex w-full items-center justify-between rounded-lg border border-gray-200 px-4 py-3 text-left hover:border-gray-300 hover:bg-gray-50 transition-colors"
+    >
+      <span>
+        <p className="text-sm font-medium text-gray-900">{label}</p>
+        <p className="text-[11px] text-gray-500">{help}</p>
+      </span>
+      <span
+        className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+          checked ? "bg-gray-900" : "bg-gray-300"
+        }`}
+      >
+        <motion.span
+          animate={{ x: checked ? 18 : 2 }}
+          transition={{ type: "spring", stiffness: 380, damping: 30 }}
+          className="inline-block h-4 w-4 rounded-full bg-white shadow"
+        />
+      </span>
+    </button>
+  );
+}
+
+function InboxDialog({
+  messages,
+  onReply,
+  onDismiss,
+  onClose,
+}: {
+  messages: InboxMessage[];
+  onReply: (m: InboxMessage) => void;
+  onDismiss: (id: string) => void;
+  onClose: () => void;
+}) {
+  return (
+    <>
+      <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+        <div>
+          <h3 className="text-base font-semibold">Inbox</h3>
+          <p className="text-xs text-gray-500">
+            Recruiter replies, routed back to your dashboard.
+          </p>
+        </div>
+        <button
+          aria-label="Close"
+          onClick={onClose}
+          className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+        >
+          <X size={16} />
+        </button>
+      </div>
+      <div className="max-h-[60vh] overflow-y-auto">
+        {messages.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 px-6 py-12 text-center">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-500">
+              <MessageSquare size={16} />
+            </div>
+            <p className="text-sm font-medium">Inbox empty</p>
+            <p className="text-xs text-gray-500">
+              New replies will land here as the agent routes them.
+            </p>
+          </div>
+        ) : (
+          <ul>
+            {messages.map((m) => (
+              <li
+                key={m.id}
+                className="flex flex-col gap-1 border-b border-gray-100 px-6 py-4 last:border-0"
+              >
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-gray-900">
+                    {m.from}
+                  </p>
+                  <span className="text-[11px] text-gray-400">
+                    &middot; {m.company}
+                  </span>
+                  {m.unread && (
+                    <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-indigo-50 px-1.5 py-0.5 text-[9px] font-semibold text-indigo-600">
+                      New
+                    </span>
+                  )}
+                  <span className="ml-auto text-[10px] text-gray-400 tabular-nums">
+                    {m.time}
+                  </span>
+                </div>
+                <p className="text-[13px] font-medium text-gray-900">
+                  {m.subject}
+                </p>
+                <p className="text-xs leading-relaxed text-gray-500">
+                  {m.preview}
+                </p>
+                <div className="mt-1 flex gap-2">
+                  <button
+                    onClick={() => onReply(m)}
+                    className="btn-shine inline-flex items-center gap-1 rounded-md bg-gray-900 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-gray-800"
+                  >
+                    <Mail size={11} />
+                    Draft reply
+                  </button>
+                  <button
+                    onClick={() => onDismiss(m.id)}
+                    className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1 text-[11px] font-medium text-gray-600 hover:border-gray-300 hover:text-gray-900"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </>
   );
 }

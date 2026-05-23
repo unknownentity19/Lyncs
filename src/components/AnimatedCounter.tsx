@@ -1,19 +1,61 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useInView, motion, useReducedMotion } from "framer-motion";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useInView, useReducedMotion } from "framer-motion";
 
 type Props = {
-  /** End numeric value as a string – may include digits, "+", "%", "k", "s", etc. */
+  /**
+   * End value as a string. May contain digits, an optional decimal,
+   * and an arbitrary prefix or suffix that is preserved verbatim
+   * (e.g. "50k+", "8s", "34%", "$120k", "1,240").
+   */
   value: string;
   /** Animation duration in ms (default 1400). */
   duration?: number;
   className?: string;
 };
 
+interface Parsed {
+  prefix: string;
+  target: number;
+  suffix: string;
+  decimals: number;
+}
+
 /**
- * Counts up to a number when scrolled into view. Preserves any non-digit
- * suffix/prefix from the original string (e.g. "50k+", "8s", "34%").
+ * Pulls the numeric portion out of `value`. Anything before the first
+ * digit becomes the prefix; anything after the last digit becomes the
+ * suffix; commas inside the number are stripped before parsing so that
+ * "1,240" still produces target = 1240 (and toLocaleString on output
+ * puts the commas back).
+ */
+function parseValue(value: string): Parsed | null {
+  const match = value.match(/^([^\d.-]*)([\d.,]+)(.*)$/);
+  if (!match) return null;
+  const numStr = match[2].replace(/,/g, "");
+  if (numStr === "" || isNaN(parseFloat(numStr))) return null;
+  return {
+    prefix: match[1] ?? "",
+    target: parseFloat(numStr),
+    suffix: match[3] ?? "",
+    decimals: numStr.includes(".") ? numStr.split(".")[1]!.length : 0,
+  };
+}
+
+/**
+ * Counts up to a numeric target the first time the element scrolls
+ * into view. Two design choices that prevent the visual jitter you
+ * see in naive counter components:
+ *
+ * 1. The output is rendered in a plain <span> with `tabular-nums`,
+ *    which forces every digit to occupy the same advance width. That
+ *    keeps surrounding layout pinned in place while digits cycle.
+ *
+ * 2. A ref guards the requestAnimationFrame so the count only runs
+ *    once per mount. Without this guard, any parent re-render that
+ *    happens to land while the counter is animating (filter changes,
+ *    hover state on a card, etc.) was restarting the timer and
+ *    snapping the value back toward zero.
  */
 export default function AnimatedCounter({
   value,
@@ -21,60 +63,61 @@ export default function AnimatedCounter({
   className,
 }: Props) {
   const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
+  const inView = useInView(ref, { once: true, amount: 0.3 });
   const prefersReducedMotion = useReducedMotion();
+  const parsed = useMemo(() => parseValue(value), [value]);
 
-  // Parse the numeric portion. Anything else becomes a suffix.
-  const match = value.match(/^([^\d.-]*)([\d.]+)(.*)$/);
-  const prefix = match?.[1] ?? "";
-  const target = match ? parseFloat(match[2]) : 0;
-  const suffix = match?.[3] ?? "";
-  const decimals = (match?.[2] ?? "").includes(".")
-    ? (match![2].split(".")[1]?.length ?? 0)
-    : 0;
-
-  const [display, setDisplay] = useState(prefersReducedMotion ? target : 0);
+  const animatedRef = useRef(false);
+  const [display, setDisplay] = useState<number>(() =>
+    parsed && prefersReducedMotion ? parsed.target : 0
+  );
 
   useEffect(() => {
-    if (!inView || !match) return;
+    if (!parsed) return;
+    if (!inView) return;
+    if (animatedRef.current) return;
+    animatedRef.current = true;
+
     if (prefersReducedMotion) {
-      setDisplay(target);
+      setDisplay(parsed.target);
       return;
     }
 
     const start = performance.now();
     let raf = 0;
-
-    const tick = (now: number) => {
-      const elapsed = now - start;
-      const progress = Math.min(elapsed / duration, 1);
-      // ease-out cubic
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplay(target * eased);
-      if (progress < 1) {
-        raf = requestAnimationFrame(tick);
-      }
+    const step = (now: number) => {
+      const t = Math.min((now - start) / duration, 1);
+      // ease-out cubic; runs the count fast at first, settles smoothly
+      const eased = 1 - Math.pow(1 - t, 3);
+      setDisplay(parsed.target * eased);
+      if (t < 1) raf = requestAnimationFrame(step);
     };
-
-    raf = requestAnimationFrame(tick);
+    raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [inView, target, duration, match, prefersReducedMotion]);
+  }, [inView, parsed, duration, prefersReducedMotion]);
 
-  // If the input wasn't numeric at all, just render it verbatim.
-  if (!match) {
-    return <span className={className}>{value}</span>;
+  // Non-numeric input (rare): render verbatim.
+  if (!parsed) {
+    return (
+      <span ref={ref} className={className}>
+        {value}
+      </span>
+    );
   }
 
   const formatted =
-    decimals > 0
-      ? display.toFixed(decimals)
+    parsed.decimals > 0
+      ? display.toFixed(parsed.decimals)
       : Math.round(display).toLocaleString();
 
   return (
-    <motion.span ref={ref} className={className}>
-      {prefix}
+    <span
+      ref={ref}
+      className={["tabular-nums", className].filter(Boolean).join(" ")}
+    >
+      {parsed.prefix}
       {formatted}
-      {suffix}
-    </motion.span>
+      {parsed.suffix}
+    </span>
   );
 }
