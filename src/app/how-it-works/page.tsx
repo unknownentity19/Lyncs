@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import PageWrapper from "@/components/PageWrapper";
 import {
   workflowFeatures,
@@ -38,19 +39,19 @@ export default function HowItWorksPage() {
               You get speed without turning the process into a mystery.
             </p>
             <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-              <a
+              <Link
                 href="/signup"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-8 py-3.5 text-sm font-medium text-white transition-all duration-200 hover:bg-foreground/90 hover:shadow-xl hover:shadow-foreground/20"
               >
                 Get started free
                 <ArrowRight size={16} />
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/pricing"
                 className="inline-flex items-center justify-center rounded-full border border-border bg-white px-8 py-3.5 text-sm font-medium text-foreground transition-all duration-200 hover:bg-card-alt"
               >
                 See pricing
-              </a>
+              </Link>
             </div>
           </motion.div>
 
@@ -212,13 +213,13 @@ export default function HowItWorksPage() {
               Start with 25 free applications. No credit card required.
             </p>
           </div>
-          <a
+          <Link
             href="/signup"
             className="inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-8 py-3.5 text-sm font-medium text-white transition-all duration-200 hover:bg-foreground/90 hover:shadow-xl hover:shadow-foreground/20"
           >
             Get started
             <ArrowRight size={16} />
-          </a>
+          </Link>
         </motion.div>
       </section>
     </PageWrapper>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import PageWrapper from "@/components/PageWrapper";
 import { platformStats, platformSurfaces } from "@/components/platformSurfaces";
 import { motion } from "framer-motion";
@@ -134,13 +135,13 @@ export default function PlatformsPage() {
                       </p>
                     </div>
 
-                    <a
+                    <Link
                       href={surface.link.href}
                       className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-foreground transition-colors duration-200 hover:text-muted"
                     >
                       {surface.link.label}
                       <ArrowRight size={15} />
-                    </a>
+                    </Link>
                   </div>
 
                   <aside className="space-y-4">
@@ -188,13 +189,13 @@ export default function PlatformsPage() {
               applications.
             </p>
           </div>
-          <a
+          <Link
             href="/signup"
             className="inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-8 py-3.5 text-sm font-medium text-white transition-all duration-200 hover:bg-foreground/90 hover:shadow-xl hover:shadow-foreground/20"
           >
             Get started
             <ArrowRight size={16} />
-          </a>
+          </Link>
         </motion.div>
       </section>
     </PageWrapper>

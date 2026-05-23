@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import BrandLogo from "@/components/BrandLogo";
 import PageWrapper from "@/components/PageWrapper";
 import { motion } from "framer-motion";
@@ -48,13 +49,13 @@ export default function MessagingPage() {
               Chat with your AI agent. Find jobs, get tailored resumes, auto-apply. Just people. Just texts.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <a
+              <Link
                 href="/signup?surface=messaging"
                 className="w-full sm:w-auto inline-flex items-center gap-2 bg-foreground text-white px-8 py-3.5 rounded-full text-sm font-medium hover:bg-foreground/90 transition-all duration-200 hover:shadow-xl hover:shadow-foreground/20 hover:-translate-y-0.5"
               >
                 Get started
                 <ArrowRight size={16} />
-              </a>
+              </Link>
               <a
                 href="https://wa.me/12067967516?text=Hey%20I%20want%20to%20start%20applying%20to%20jobs"
                 className="w-full sm:w-auto inline-flex items-center gap-2 border border-border px-8 py-3.5 rounded-full text-sm font-medium hover:bg-card-alt transition-all duration-200"
@@ -162,13 +163,13 @@ export default function MessagingPage() {
             <p className="text-muted text-lg mb-8">
               Sign up and connect your iMessage or WhatsApp in under a minute.
             </p>
-            <a
+            <Link
               href="/signup?surface=messaging"
               className="inline-flex items-center gap-2 bg-foreground text-white px-8 py-3.5 rounded-full text-sm font-medium hover:bg-foreground/90 transition-all duration-200 hover:shadow-xl hover:shadow-foreground/20 hover:-translate-y-0.5"
             >
               Get started
               <ArrowRight size={16} />
-            </a>
+            </Link>
           </motion.div>
         </div>
       </section>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, MessageSquare } from "lucide-react";
 
 const faqs = [
   {
@@ -31,17 +31,46 @@ const faqs = [
   },
 ];
 
-function FAQItem({ q, a, isOpen, onClick }: { q: string; a: string; isOpen: boolean; onClick: () => void }) {
+function FAQItem({
+  q,
+  a,
+  isOpen,
+  onClick,
+}: {
+  q: string;
+  a: string;
+  isOpen: boolean;
+  onClick: () => void;
+}) {
   return (
-    <div className="border-b border-border last:border-0">
+    <div
+      className={`border-b border-border last:border-0 transition-colors ${
+        isOpen ? "bg-gradient-to-r from-indigo-50/40 via-transparent to-pink-50/30" : ""
+      }`}
+    >
       <button
         onClick={onClick}
-        className="w-full flex items-center justify-between py-6 text-left cursor-pointer group"
+        aria-expanded={isOpen}
+        className="w-full flex items-center justify-between gap-6 py-6 px-3 sm:px-5 text-left cursor-pointer group rounded-xl transition-colors hover:bg-white/60"
       >
-        <span className="text-base font-medium pr-8 group-hover:text-foreground transition-colors">{q}</span>
-        <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-          <ChevronDown size={18} className="text-muted shrink-0" />
-        </motion.div>
+        <span
+          className={`text-base font-medium pr-4 transition-colors ${
+            isOpen ? "text-foreground" : "text-foreground/90 group-hover:text-foreground"
+          }`}
+        >
+          {q}
+        </span>
+        <motion.span
+          animate={{ rotate: isOpen ? 180 : 0 }}
+          transition={{ type: "spring", stiffness: 280, damping: 22 }}
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-colors ${
+            isOpen
+              ? "border-foreground/40 bg-foreground text-white"
+              : "border-border bg-white text-muted group-hover:border-foreground/30 group-hover:text-foreground"
+          }`}
+        >
+          <ChevronDown size={16} />
+        </motion.span>
       </button>
       <AnimatePresence initial={false}>
         {isOpen && (
@@ -52,7 +81,9 @@ function FAQItem({ q, a, isOpen, onClick }: { q: string; a: string; isOpen: bool
             transition={{ duration: 0.3, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <p className="pb-6 text-muted text-sm leading-relaxed max-w-3xl">{a}</p>
+            <p className="pb-6 px-3 sm:px-5 text-muted text-sm leading-relaxed max-w-3xl">
+              {a}
+            </p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -61,10 +92,11 @@ function FAQItem({ q, a, isOpen, onClick }: { q: string; a: string; isOpen: bool
 }
 
 export default function FAQ() {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section id="faq" className="py-24 px-6 bg-card-alt/50">
+    <section id="faq" className="relative py-24 px-6 bg-card-alt/50">
+      <div className="bg-grid bg-grid-fade absolute inset-0 -z-10 opacity-40" />
       <div className="max-w-3xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -73,13 +105,21 @@ export default function FAQ() {
           transition={{ duration: 0.5 }}
           className="text-center mb-12"
         >
+          <span className="inline-flex items-center gap-2 mb-4 px-3 py-1.5 rounded-full border border-border bg-white/70 backdrop-blur text-xs font-medium text-muted">
+            <MessageSquare size={12} />
+            Frequently asked
+          </span>
           <h2 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
-            What people ask<br />
-            <span className="text-muted">before signing up.</span>
+            What people ask
+            <br />
+            <span className="gradient-text">before signing up.</span>
           </h2>
           <p className="text-muted text-base">
             Have something else on your mind? Write to{" "}
-            <a href="mailto:founders@lyncs.com" className="underline hover:text-foreground transition-colors">
+            <a
+              href="mailto:founders@lyncs.com"
+              className="link-underline text-foreground transition-colors"
+            >
               founders@lyncs.com
             </a>
           </p>
@@ -90,7 +130,7 @@ export default function FAQ() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="rounded-3xl bg-white border border-border p-2 sm:p-4"
+          className="rounded-3xl bg-white border border-border p-2 sm:p-4 shadow-[0_20px_40px_-24px_rgba(15,23,42,0.18)]"
         >
           {faqs.map((faq, i) => (
             <FAQItem
