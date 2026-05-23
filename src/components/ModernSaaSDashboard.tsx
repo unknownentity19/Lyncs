@@ -21,6 +21,7 @@ import {
   FileText,
   LayoutDashboard,
   LineChart,
+  LogIn,
   Mail,
   Menu,
   MessageSquare,
@@ -31,6 +32,7 @@ import {
   Settings,
   Sparkles,
   Timer,
+  User,
   X,
   XCircle,
   Zap,
@@ -109,7 +111,35 @@ type DialogId =
   | "upgrade"
   | "settings"
   | "inbox"
+  | "login"
   | null;
+
+type PlanTier = "Free" | "Pro" | "Power";
+
+interface Account {
+  name: string;
+  email: string;
+}
+
+const PLAN_USAGE: Record<PlanTier, { cap: number; used: number }> = {
+  Free: { cap: 25, used: 8 },
+  Pro: { cap: 200, used: 127 },
+  Power: { cap: Infinity, used: 412 },
+};
+
+/**
+ * "alex.morgan@gmail.com" -> "Alex Morgan"
+ * "ada@lyncs.com"         -> "Ada"
+ */
+function deriveNameFromEmail(email: string): string {
+  const local = email.split("@")[0] || "Friend";
+  const cleaned = local.replace(/[^a-zA-Z]+/g, " ").trim();
+  if (!cleaned) return "Friend";
+  return cleaned
+    .split(/\s+/)
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+    .join(" ");
+}
 
 /* -------------------------------------------------------------------------- */
 /*  Pieces                                                                    */
@@ -471,7 +501,7 @@ const initialInboxMessages: InboxMessage[] = [
     company: "Stripe",
     subject: "Quick chat next week?",
     preview:
-      "Hi Alex \u2014 saw your application come through. Loved your work on the design system at \u2026",
+      "Hi \u2014 saw your application come through. Loved your work on the design system at \u2026",
     time: "12m ago",
     unread: true,
   },
@@ -490,7 +520,8 @@ const initialInboxMessages: InboxMessage[] = [
     from: "Priya Mehta",
     company: "Figma",
     subject: "Onsite scheduling",
-    preview: "We\u2019d love to bring you in onsite next Tuesday. Are mornings better than afternoons?",
+    preview:
+      "We\u2019d love to bring you in onsite next Tuesday. Are mornings better than afternoons?",
     time: "3h ago",
     unread: true,
   },
@@ -532,8 +563,14 @@ export default function ModernSaaSDashboard() {
   const [bellOpen, setBellOpen] = useState(false);
   const [openDialog, setOpenDialog] = useState<DialogId>(null);
   const [notice, setNotice] = useState<string | null>(
-    "47 active applications are ready for review."
+    "Browse the demo as a guest, or log in to personalise your dashboard."
   );
+
+  // Auth + plan state. The dashboard renders unauthenticated by default
+  // so name/email are hidden and a Log in CTA is exposed.
+  const [signedIn, setSignedIn] = useState(false);
+  const [account, setAccount] = useState<Account | null>(null);
+  const [planTier, setPlanTier] = useState<PlanTier>("Free");
 
   // Real state for things that mutate.
   const [applications, setApplications] = useState<Application[]>(
@@ -550,7 +587,6 @@ export default function ModernSaaSDashboard() {
     "remote · US",
     "design systems",
   ]);
-  const [planTier, setPlanTier] = useState<"Pro" | "Power">("Pro");
 
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -720,6 +756,38 @@ export default function ModernSaaSDashboard() {
     setNotice("All notifications marked as read.");
   }, []);
 
+  /* ---- Auth --------------------------------------------------------- */
+
+  const signIn = useCallback(
+    (email: string) => {
+      const cleaned = email.trim();
+      if (!cleaned) return;
+      const next: Account = {
+        email: cleaned,
+        name: deriveNameFromEmail(cleaned),
+      };
+      setAccount(next);
+      setSignedIn(true);
+      setOpenDialog(null);
+      prependEvent({
+        id: `evt-login-${Date.now()}`,
+        icon: LogIn,
+        title: `Signed in as ${next.name}`,
+        meta: cleaned,
+        tone: "ok",
+      });
+      setNotice(`Welcome back, ${next.name.split(" ")[0]}.`);
+    },
+    [prependEvent]
+  );
+
+  const signOut = useCallback(() => {
+    setSignedIn(false);
+    setAccount(null);
+    setProfileOpen(false);
+    setNotice("You\u2019ve been signed out. The dashboard is back in demo mode.");
+  }, []);
+
   /* ---- Navigation helpers ------------------------------------------- */
 
   const scrollToSection = useCallback((id: string) => {
@@ -800,6 +868,32 @@ export default function ModernSaaSDashboard() {
 
   const unreadCount = inboxMessages.filter((m) => m.unread).length;
 
+  const usage = PLAN_USAGE[planTier];
+  const usagePercent =
+    usage.cap === Infinity ? 100 : Math.min(100, (usage.used / usage.cap) * 100);
+  const usageLabel =
+    usage.cap === Infinity
+      ? "Unlimited applications"
+      : `${usage.used} / ${usage.cap} applications used`;
+
+  const greetingHeading =
+    signedIn && account
+      ? `Good afternoon, ${account.name.split(" ")[0]}.`
+      : "Welcome to Lyncs.";
+  const greetingSub = signedIn
+    ? `${submittedTotal} submission${submittedTotal === 1 ? "" : "s"} today \u00b7 8s average apply time. Your agent is still hunting.`
+    : "Browsing the demo dashboard. Log in to personalise it with your own searches.";
+
+  const initials = account
+    ? account.name
+        .split(/\s+/)
+        .map((p) => p.charAt(0))
+        .filter(Boolean)
+        .slice(0, 2)
+        .join("")
+        .toUpperCase() || "?"
+    : "";
+
   /* ---- Render ------------------------------------------------------- */
 
   return (
@@ -815,7 +909,13 @@ export default function ModernSaaSDashboard() {
             {/* Workspace card */}
             <div className="px-5 pt-5">
               <button
-                onClick={() => setProfileOpen((o) => !o)}
+                onClick={() => {
+                  if (signedIn) {
+                    setProfileOpen((o) => !o);
+                  } else {
+                    setOpenDialog("login");
+                  }
+                }}
                 className="group flex w-full items-center gap-3 rounded-xl border border-gray-200 bg-white p-2.5 hover:border-gray-300 hover:shadow-sm transition-all"
               >
                 <BrandLogo imageClassName="h-9 rounded-lg" />
@@ -823,9 +923,7 @@ export default function ModernSaaSDashboard() {
                   <p className="text-[13px] font-semibold leading-tight">
                     Lyncs Workspace
                   </p>
-                  <p className="text-[11px] text-gray-500">
-                    {planTier} &middot; monthly
-                  </p>
+                  <p className="text-[11px] text-gray-500">{planTier} plan</p>
                 </div>
                 <ChevronDown
                   size={14}
@@ -899,20 +997,26 @@ export default function ModernSaaSDashboard() {
                   <p className="text-xs font-semibold text-gray-900">
                     {planTier} plan
                   </p>
-                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600">
-                    <span className="dot-pulse h-1.5 w-1.5" />
-                    Active
+                  <span
+                    className={`inline-flex items-center gap-1 text-[10px] font-semibold ${
+                      planTier === "Free"
+                        ? "text-gray-500"
+                        : "text-emerald-600"
+                    }`}
+                  >
+                    {planTier !== "Free" && (
+                      <span className="dot-pulse h-1.5 w-1.5" />
+                    )}
+                    {planTier === "Free" ? "Demo limits" : "Active"}
                   </span>
                 </div>
-                <p className="mt-1 text-[11px] text-gray-500">
-                  {planTier === "Power"
-                    ? "Unlimited applications"
-                    : "127 / 200 applications used"}
+                <p className="mt-1 text-[11px] text-gray-500 tabular-nums">
+                  {usageLabel}
                 </p>
                 <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-gray-100">
                   <motion.div
                     initial={{ width: 0 }}
-                    animate={{ width: planTier === "Power" ? "100%" : "63.5%" }}
+                    animate={{ width: `${usagePercent}%` }}
                     transition={{ duration: 1.1, ease: "easeOut" }}
                     className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-amber-500"
                   />
@@ -921,82 +1025,116 @@ export default function ModernSaaSDashboard() {
                   onClick={() => setOpenDialog("upgrade")}
                   className="mt-3 flex w-full items-center justify-center gap-1 rounded-lg border border-gray-200 bg-white py-1.5 text-[11px] font-semibold text-gray-700 hover:border-gray-300 hover:text-gray-900 transition-colors"
                 >
-                  {planTier === "Power" ? "Manage plan" : "Upgrade"}
+                  {planTier === "Free" ? "Upgrade" : "Manage plan"}
                   <ArrowUpRight size={11} />
                 </button>
               </div>
             </div>
 
-            {/* Avatar dropdown */}
+            {/* Account block (signed in) OR Log in / Sign up (signed out) */}
             <div className="border-t border-gray-200 p-3">
-              <button
-                onClick={() => setProfileOpen((o) => !o)}
-                className="flex w-full items-center gap-2.5 rounded-lg p-2 hover:bg-gray-50 transition-colors"
-              >
-                <div className="relative">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-400 via-fuchsia-400 to-amber-400 text-xs font-bold text-white shadow-inner">
-                    A
-                  </div>
-                  <span className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500" />
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="text-[13px] font-medium leading-tight">
-                    Alex Morgan
-                  </p>
-                  <p className="text-[11px] text-gray-500">alex@lyncs.com</p>
-                </div>
-                <ChevronDown size={14} className="text-gray-400" />
-              </button>
-              <AnimatePresence>
-                {profileOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 4 }}
-                    transition={{ duration: 0.15 }}
-                    className="mt-2 overflow-hidden rounded-lg border border-gray-200 bg-white p-1 shadow-lg"
+              {signedIn && account ? (
+                <>
+                  <button
+                    onClick={() => setProfileOpen((o) => !o)}
+                    className="flex w-full items-center gap-2.5 rounded-lg p-2 hover:bg-gray-50 transition-colors"
                   >
+                    <div className="relative">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-400 via-fuchsia-400 to-amber-400 text-xs font-bold text-white shadow-inner">
+                        {initials}
+                      </div>
+                      <span className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500" />
+                    </div>
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className="truncate text-[13px] font-medium leading-tight">
+                        {account.name}
+                      </p>
+                      <p className="truncate text-[11px] text-gray-500">
+                        {account.email}
+                      </p>
+                    </div>
+                    <ChevronDown size={14} className="text-gray-400" />
+                  </button>
+                  <AnimatePresence>
+                    {profileOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 4 }}
+                        transition={{ duration: 0.15 }}
+                        className="mt-2 overflow-hidden rounded-lg border border-gray-200 bg-white p-1 shadow-lg"
+                      >
+                        <button
+                          onClick={() => {
+                            setProfileOpen(false);
+                            setOpenDialog("settings");
+                          }}
+                          className="block w-full rounded-md px-3 py-1.5 text-left text-[13px] text-gray-700 hover:bg-gray-50"
+                        >
+                          Account settings
+                        </button>
+                        <button
+                          onClick={() => {
+                            setProfileOpen(false);
+                            setOpenDialog("upgrade");
+                          }}
+                          className="block w-full rounded-md px-3 py-1.5 text-left text-[13px] text-gray-700 hover:bg-gray-50"
+                        >
+                          Billing
+                        </button>
+                        <button
+                          onClick={() => {
+                            setProfileOpen(false);
+                            setNotice(
+                              "Shortcuts: \u2318K search \u00b7 \u2318\u21B5 apply all \u00b7 Esc closes panels."
+                            );
+                          }}
+                          className="block w-full rounded-md px-3 py-1.5 text-left text-[13px] text-gray-700 hover:bg-gray-50"
+                        >
+                          Keyboard shortcuts
+                        </button>
+                        <button
+                          onClick={signOut}
+                          className="block w-full rounded-md px-3 py-1.5 text-left text-[13px] text-rose-600 hover:bg-rose-50"
+                        >
+                          Sign out
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </>
+              ) : (
+                <div className="space-y-2 px-1 py-1">
+                  <div className="flex items-center gap-2.5 px-1 pt-0.5">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dashed border-gray-300 bg-gray-50 text-gray-400">
+                      <User size={15} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-medium leading-tight text-gray-900">
+                        Guest
+                      </p>
+                      <p className="text-[11px] text-gray-500">
+                        Demo mode &middot; no account
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
                     <button
-                      onClick={() => {
-                        setProfileOpen(false);
-                        setOpenDialog("settings");
-                      }}
-                      className="block w-full rounded-md px-3 py-1.5 text-left text-[13px] text-gray-700 hover:bg-gray-50"
+                      onClick={() => setOpenDialog("login")}
+                      className="btn-shine flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-gray-900 px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-gray-800 transition-colors"
                     >
-                      Account settings
+                      <LogIn size={12} />
+                      Log in
                     </button>
-                    <button
-                      onClick={() => {
-                        setProfileOpen(false);
-                        setOpenDialog("upgrade");
-                      }}
-                      className="block w-full rounded-md px-3 py-1.5 text-left text-[13px] text-gray-700 hover:bg-gray-50"
+                    <a
+                      href="/signup"
+                      className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-gray-700 hover:border-gray-300 hover:text-gray-900 transition-colors"
                     >
-                      Billing
-                    </button>
-                    <button
-                      onClick={() => {
-                        setProfileOpen(false);
-                        setNotice(
-                          "Shortcuts: \u2318K search \u00b7 \u2318\u21B5 apply all \u00b7 Esc closes panels."
-                        );
-                      }}
-                      className="block w-full rounded-md px-3 py-1.5 text-left text-[13px] text-gray-700 hover:bg-gray-50"
-                    >
-                      Keyboard shortcuts
-                    </button>
-                    <button
-                      onClick={() => {
-                        setProfileOpen(false);
-                        setNotice("Signed out. (Demo)");
-                      }}
-                      className="block w-full rounded-md px-3 py-1.5 text-left text-[13px] text-rose-600 hover:bg-rose-50"
-                    >
-                      Sign out
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                      Sign up
+                    </a>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1114,12 +1252,30 @@ export default function ModernSaaSDashboard() {
             >
               <Settings size={17} />
             </button>
-            <div className="hidden items-center gap-2 rounded-full border border-gray-200 bg-white py-1 pl-1 pr-2.5 sm:inline-flex">
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-indigo-400 via-fuchsia-400 to-amber-400 text-[11px] font-bold text-white">
-                A
-              </div>
-              <span className="text-[12px] font-medium">Alex</span>
-            </div>
+
+            {/* Avatar pill (signed in) OR Log in button (signed out) */}
+            {signedIn && account ? (
+              <button
+                onClick={() => setProfileOpen((o) => !o)}
+                className="hidden items-center gap-2 rounded-full border border-gray-200 bg-white py-1 pl-1 pr-2.5 transition-colors hover:border-gray-300 sm:inline-flex"
+                aria-label="Account menu"
+              >
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-indigo-400 via-fuchsia-400 to-amber-400 text-[11px] font-bold text-white">
+                  {initials}
+                </div>
+                <span className="text-[12px] font-medium">
+                  {account.name.split(" ")[0]}
+                </span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setOpenDialog("login")}
+                className="btn-shine inline-flex items-center gap-1.5 rounded-full bg-gray-900 px-3.5 py-1.5 text-[12px] font-semibold text-white hover:bg-gray-800 transition-colors"
+              >
+                <LogIn size={12} />
+                Log in
+              </button>
+            )}
           </div>
         </header>
 
@@ -1148,18 +1304,25 @@ export default function ModernSaaSDashboard() {
                 <div>
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white/80 px-2.5 py-1 text-[11px] font-medium text-gray-600 backdrop-blur">
                     <span className="dot-pulse" />
-                    Live &middot; 47 active
+                    {signedIn ? "Live \u00b7 47 active" : "Demo workspace"}
                   </span>
                   <h1 className="mt-3 text-2xl font-bold sm:text-3xl">
-                    Good afternoon, Alex.
+                    {greetingHeading}
                   </h1>
-                  <p className="mt-1 text-sm text-gray-600">
-                    <span className="tabular-nums">{submittedTotal}</span>{" "}
-                    submission{submittedTotal === 1 ? "" : "s"} today &middot;
-                    8s average apply time. Your agent is still hunting.
-                  </p>
+                  <p className="mt-1 text-sm text-gray-600">{greetingSub}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
+                  {!signedIn && (
+                    <motion.button
+                      whileHover={{ y: -1 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => setOpenDialog("login")}
+                      className="btn-shine inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white/90 px-3.5 py-2 text-[13px] font-semibold text-gray-900 hover:border-gray-300 transition-colors"
+                    >
+                      <LogIn size={14} />
+                      Log in
+                    </motion.button>
+                  )}
                   <button
                     onClick={() => scrollToSection("section-kpi")}
                     className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white/90 px-3.5 py-2 text-[13px] font-medium text-gray-700 hover:border-gray-300 hover:bg-white transition-colors"
@@ -1212,7 +1375,10 @@ export default function ModernSaaSDashboard() {
             </AnimatePresence>
 
             {/* KPI strip */}
-            <section id="section-kpi" className="grid gap-4 scroll-mt-20 sm:grid-cols-2 lg:grid-cols-4">
+            <section
+              id="section-kpi"
+              className="grid gap-4 scroll-mt-20 sm:grid-cols-2 lg:grid-cols-4"
+            >
               {stats.map((stat, i) => (
                 <motion.div
                   key={stat.label}
@@ -1628,6 +1794,12 @@ export default function ModernSaaSDashboard() {
       <AnimatePresence>
         {openDialog && (
           <ModalShell key={openDialog} onClose={() => setOpenDialog(null)}>
+            {openDialog === "login" && (
+              <LoginDialog
+                onSubmit={signIn}
+                onClose={() => setOpenDialog(null)}
+              />
+            )}
             {openDialog === "newSearch" && (
               <NewSearchDialog
                 savedSearches={savedSearches}
@@ -1657,7 +1829,9 @@ export default function ModernSaaSDashboard() {
                   setNotice(
                     tier === "Power"
                       ? "You\u2019re on Power. Unlimited applications unlocked."
-                      : "You\u2019re on Pro. 200 applications / month."
+                      : tier === "Pro"
+                      ? "You\u2019re on Pro. 200 applications / month."
+                      : "You\u2019re on Free. 25 applications to start."
                   );
                   setOpenDialog(null);
                 }}
@@ -1819,6 +1993,102 @@ function ModalShell({
   );
 }
 
+/**
+ * Lightweight in-dashboard login. Real auth lives at /signup; this is
+ * just the demo version so visitors can flip into a personalised view
+ * without leaving the page.
+ */
+function LoginDialog({
+  onSubmit,
+  onClose,
+}: {
+  onSubmit: (email: string) => void;
+  onClose: () => void;
+}) {
+  const [email, setEmail] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  return (
+    <>
+      <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+        <div>
+          <h3 className="text-base font-semibold">Log in to Lyncs</h3>
+          <p className="text-xs text-gray-500">
+            Demo sign-in &mdash; no password required.
+          </p>
+        </div>
+        <button
+          aria-label="Close"
+          onClick={onClose}
+          className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+        >
+          <X size={16} />
+        </button>
+      </div>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit(email);
+        }}
+        className="px-6 py-5"
+      >
+        <label className="block text-xs font-medium text-gray-600">
+          Email address
+        </label>
+        <div className="mt-1 flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100">
+          <Mail size={14} className="text-gray-400" />
+          <input
+            ref={inputRef}
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            className="w-full bg-transparent text-sm focus:outline-none"
+          />
+        </div>
+
+        <p className="mt-3 text-[11px] leading-relaxed text-gray-500">
+          We&apos;ll personalise the dashboard with your name and email. No
+          password is stored anywhere &mdash; this demo runs entirely in your
+          browser.
+        </p>
+
+        <div className="mt-6 flex gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Stay as guest
+          </button>
+          <button
+            type="submit"
+            className="btn-shine flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800"
+          >
+            <LogIn size={13} />
+            Continue
+          </button>
+        </div>
+
+        <div className="mt-4 text-center text-[11px] text-gray-500">
+          New to Lyncs?{" "}
+          <a
+            href="/signup"
+            className="font-semibold text-gray-900 hover:underline"
+          >
+            Create an account
+          </a>
+        </div>
+      </form>
+    </>
+  );
+}
+
 function NewSearchDialog({
   savedSearches,
   onSubmit,
@@ -1859,9 +2129,7 @@ function NewSearchDialog({
         }}
         className="px-6 py-5"
       >
-        <label className="block text-xs font-medium text-gray-600">
-          Query
-        </label>
+        <label className="block text-xs font-medium text-gray-600">Query</label>
         <input
           ref={inputRef}
           type="text"
@@ -1916,13 +2184,28 @@ function UpgradeDialog({
   onChoose,
   onClose,
 }: {
-  planTier: "Pro" | "Power";
-  onChoose: (tier: "Pro" | "Power") => void;
+  planTier: PlanTier;
+  onChoose: (tier: PlanTier) => void;
   onClose: () => void;
 }) {
-  const tiers = [
+  const tiers: Array<{
+    id: PlanTier;
+    price: string;
+    cap: string;
+    perks: string[];
+  }> = [
     {
-      id: "Pro" as const,
+      id: "Free",
+      price: "$0/mo",
+      cap: "25 applications to start",
+      perks: [
+        "Basic job matching",
+        "Resume tailoring",
+        "Email notifications",
+      ],
+    },
+    {
+      id: "Pro",
       price: "$29/mo",
       cap: "200 applications / month",
       perks: [
@@ -1932,7 +2215,7 @@ function UpgradeDialog({
       ],
     },
     {
-      id: "Power" as const,
+      id: "Power",
       price: "$79/mo",
       cap: "Unlimited applications",
       perks: [
