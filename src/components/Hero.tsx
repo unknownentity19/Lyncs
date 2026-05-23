@@ -60,7 +60,7 @@ export default function Hero() {
         >
           <a
             href="#platforms"
-            className="group float-chip inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent-green/70 hover:bg-accent-green text-sm font-medium text-foreground transition-colors duration-200 mb-6 shadow-[0_8px_24px_-16px_rgba(34,197,94,0.6)]"
+            className="group float-chip inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent-green/70 hover:bg-accent-green text-sm font-medium text-foreground transition-colors duration-200 shadow-[0_8px_24px_-16px_rgba(34,197,94,0.6)]"
           >
             <MessageCircle size={14} className="text-emerald-700" />
             Apply to jobs on iMessage
@@ -68,19 +68,6 @@ export default function Hero() {
               size={14}
               className="arrow-bounce transition-transform duration-200 group-hover:translate-x-0.5"
             />
-          </a>
-
-          <a
-            href="https://www.ycombinator.com/"
-            target="_blank"
-            rel="noreferrer"
-            className="group inline-flex items-center gap-2 text-xs text-muted hover:text-foreground transition-colors"
-          >
-            <span className="relative inline-flex items-center justify-center w-5 h-5 rounded bg-orange-500 text-white text-[10px] font-bold">
-              Y
-              <span className="absolute -right-0.5 -top-0.5 dot-pulse" />
-            </span>
-            Backed by Y Combinator
           </a>
         </motion.div>
 
