@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import {
@@ -68,7 +69,7 @@ function SurfaceCard({
         ))}
       </div>
 
-      <a
+      <Link
         href={surface.link.href}
         className="mt-auto inline-flex items-center gap-2 pt-8 text-sm font-semibold text-foreground transition-colors duration-200 hover:text-muted"
       >
@@ -77,7 +78,7 @@ function SurfaceCard({
           size={15}
           className="transition-transform duration-200 group-hover:translate-x-1"
         />
-      </a>
+      </Link>
     </motion.article>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import PageWrapper from "@/components/PageWrapper";
 import { motion } from "framer-motion";
 import { Terminal, ArrowRight, CheckCircle, Code, Zap, Shield, Copy } from "lucide-react";
@@ -112,12 +113,12 @@ export default function MCPPage() {
                 Get setup instructions
                 <ArrowRight size={16} />
               </a>
-              <a
+              <Link
                 href="/signup?surface=mcp"
                 className="w-full sm:w-auto inline-flex items-center gap-2 border border-border px-8 py-3.5 rounded-full text-sm font-medium hover:bg-card-alt transition-all duration-200"
               >
                 Sign up
-              </a>
+              </Link>
             </div>
           </motion.div>
         </div>
@@ -229,13 +230,13 @@ export default function MCPPage() {
             <p className="text-muted text-lg mb-8">
               Connect Lyncs and let your agent handle the rest.
             </p>
-            <a
+            <Link
               href="/signup?surface=mcp"
               className="inline-flex items-center gap-2 bg-foreground text-white px-8 py-3.5 rounded-full text-sm font-medium hover:bg-foreground/90 transition-all duration-200 hover:shadow-xl"
             >
               Get started
               <ArrowRight size={16} />
-            </a>
+            </Link>
           </motion.div>
         </div>
       </section>

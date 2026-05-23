@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
 
@@ -40,7 +41,7 @@ export default function BottomCTA() {
             </h2>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <a
+              <Link
                 href="/signup"
                 className="group btn-shine w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-foreground text-white px-8 py-3.5 rounded-full text-sm font-medium hover:bg-foreground/90 transition-all duration-200 hover:shadow-xl hover:shadow-foreground/25 hover:-translate-y-0.5"
               >
@@ -49,7 +50,7 @@ export default function BottomCTA() {
                   size={16}
                   className="transition-transform duration-200 group-hover:translate-x-0.5"
                 />
-              </a>
+              </Link>
               <a
                 href="#pricing"
                 className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-border bg-white/80 backdrop-blur text-foreground px-8 py-3.5 rounded-full text-sm font-medium hover:bg-white hover:border-foreground/25 transition-all duration-200"

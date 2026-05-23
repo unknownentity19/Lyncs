@@ -1,0 +1,70 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - enhance-design-animations
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one Pages deployment can be in flight at a time. Cancel
+# in-progress runs when a newer commit lands so we always ship the
+# latest build.
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build static site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build (next export)
+        env:
+          # Repo is served at https://<owner>.github.io/Lyncs/, so every
+          # asset and Link href needs to live under /Lyncs.
+          NEXT_PUBLIC_BASE_PATH: /Lyncs
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: npm run build
+
+      - name: Disable Jekyll on the artifact
+        # Without this, GitHub Pages' Jekyll layer drops files/folders
+        # whose names start with an underscore (e.g. /_next/...).
+        run: touch out/.nojekyll
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

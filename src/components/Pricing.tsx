@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { Check, ArrowRight, Sparkles } from "lucide-react";
 
@@ -171,7 +172,7 @@ export default function Pricing() {
                 )}
               </div>
 
-              <a
+              <Link
                 href={`/signup?plan=${tier.name.toLowerCase()}&billing=${
                   annual ? "annual" : "monthly"
                 }`}
@@ -186,7 +187,7 @@ export default function Pricing() {
                   size={14}
                   className="transition-transform duration-200 group-hover:translate-x-0.5"
                 />
-              </a>
+              </Link>
 
               <ul className="space-y-3">
                 {tier.features.map((feat, fi) => (

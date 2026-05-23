@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { workflowMetrics, workflowSteps } from "@/components/workflowSteps";
@@ -215,7 +216,7 @@ export default function HowItWorks() {
                   ))}
                 </div>
 
-                <a
+                <Link
                   href="/how-it-works"
                   className="group mt-8 inline-flex items-center gap-2 text-sm font-semibold text-foreground hover:text-muted"
                 >
@@ -224,7 +225,7 @@ export default function HowItWorks() {
                     size={16}
                     className="transition-transform group-hover:translate-x-0.5"
                   />
-                </a>
+                </Link>
               </aside>
             </div>
           </motion.div>
