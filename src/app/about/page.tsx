@@ -150,7 +150,7 @@ export default function AboutPage() {
                 />
               </Link>
               <a
-                href="mailto:founders@lyncs.com?subject=Hi%20Lyncs"
+                href="mailto:fardin@lyncs.dev?subject=Hi%20Lyncs"
                 className="group inline-flex items-center justify-center gap-2 rounded-full border border-border bg-white/80 px-8 py-3.5 text-sm font-medium text-foreground backdrop-blur transition-all duration-200 hover:border-foreground/25 hover:bg-card-alt"
               >
                 <MessageCircle size={15} className="opacity-70" />
@@ -324,7 +324,7 @@ export default function AboutPage() {
               </p>
               <div className="mt-6 flex flex-col gap-3">
                 <a
-                  href="mailto:founders@lyncs.com?subject=Hi%20Lyncs"
+                  href="mailto:fardin@lyncs.dev?subject=Hi%20Lyncs"
                   className="btn-shine inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-foreground/90"
                 >
                   <Sparkles size={15} />
