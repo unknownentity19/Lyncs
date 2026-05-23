@@ -3,6 +3,7 @@ import Hero from "@/components/Hero";
 import DashboardShowcase from "@/components/DashboardShowcase";
 import HowItWorks from "@/components/HowItWorks";
 import Platforms from "@/components/Platforms";
+import About from "@/components/About";
 import Pricing from "@/components/Pricing";
 import FAQ from "@/components/FAQ";
 import BottomCTA from "@/components/BottomCTA";
@@ -17,6 +18,7 @@ export default function Home() {
         <DashboardShowcase />
         <HowItWorks />
         <Platforms />
+        <About />
         <Pricing />
         <FAQ />
         <BottomCTA />
