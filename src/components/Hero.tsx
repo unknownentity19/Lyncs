@@ -114,7 +114,7 @@ export default function Hero() {
             className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10"
           >
             <Link
-              href="/signup"
+              href="/dashboard"
               className="group btn-shine w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-foreground text-white px-8 py-3.5 rounded-full text-sm font-medium hover:bg-foreground/90 transition-all duration-200 hover:shadow-xl hover:shadow-foreground/25 hover:-translate-y-0.5"
             >
               <Sparkles size={15} className="opacity-80" />
