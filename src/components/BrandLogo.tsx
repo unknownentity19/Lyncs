@@ -18,10 +18,11 @@ export default function BrandLogo({
     <Image
       src="/lyncs-logo.png"
       alt="Lyncs logo"
-      width={377}
-      height={120}
+      width={852}
+      height={320}
+      priority={eager}
       loading={eager ? "eager" : "lazy"}
-      className={`h-10 w-auto rounded-xl object-contain ${imageClassName}`.trim()}
+      className={`h-10 w-auto object-contain ${imageClassName}`.trim()}
     />
   );
 
