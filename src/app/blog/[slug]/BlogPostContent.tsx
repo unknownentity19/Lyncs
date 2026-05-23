@@ -175,18 +175,4 @@ export default function BlogPostContent({ slug }: { slug: string }) {
   );
 }
 
-/**
- * Slugs available for static export. Keep in sync with the blog index page.
- */
-export const exportableSlugs = [
-  "lyncs-vs-competitors",
-  "lyncs-vs-simplify",
-  "lyncs-vs-jobright",
-  "lyncs-vs-sorce-jobs",
-  "lyncs-vs-aiapply",
-  "lyncs-vs-massive",
-  "lyncs-vs-lazyapply",
-  "lyncs-vs-teal",
-  "lyncs-vs-scale-jobs",
-  "lyncs-vs-huntr",
-];
+

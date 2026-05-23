@@ -1,4 +1,5 @@
-import BlogPostContent, { exportableSlugs } from "./BlogPostContent";
+import BlogPostContent from "./BlogPostContent";
+import { exportableSlugs } from "./slugs";
 
 // Lock the dynamic segment to the slugs we know about so `next build` can
 // render every blog post into the static export.

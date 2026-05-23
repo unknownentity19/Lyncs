@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion, type Variants } from "framer-motion";
 import { MessageCircle, ArrowRight, Sparkles } from "lucide-react";
 
 const headlineLead = "Be the first to apply to every job that fits you.";
@@ -20,20 +20,20 @@ const trustedCompanies = [
   "Retool",
 ];
 
-const wordContainer = {
+const wordContainer: Variants = {
   hidden: {},
   show: {
     transition: { staggerChildren: 0.045, delayChildren: 0.15 },
   },
 };
 
-const wordItem = {
+const wordItem: Variants = {
   hidden: { opacity: 0, y: 18, filter: "blur(6px)" },
   show: {
     opacity: 1,
     y: 0,
     filter: "blur(0px)",
-    transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] as const },
+    transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
   },
 };
 
