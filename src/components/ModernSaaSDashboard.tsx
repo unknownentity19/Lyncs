@@ -935,7 +935,6 @@ export default function ModernSaaSDashboard() {
             {/* Apply-all CTA */}
             <div className="px-5 mt-4">
               <motion.button
-                whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={queueAllMatches}
                 className="group btn-shine flex w-full items-center justify-between rounded-xl bg-gradient-to-r from-indigo-600 via-fuchsia-600 to-amber-500 px-4 py-2.5 text-white shadow-[0_8px_24px_-12px_rgba(99,102,241,0.6)]"
@@ -1290,16 +1289,6 @@ export default function ModernSaaSDashboard() {
               transition={{ duration: 0.5 }}
               className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 scroll-mt-20"
             >
-              <div className="aurora pointer-events-none">
-                <span
-                  className="aurora__blob aurora__blob--a"
-                  style={{ opacity: 0.35 }}
-                />
-                <span
-                  className="aurora__blob aurora__blob--b"
-                  style={{ opacity: 0.3 }}
-                />
-              </div>
               <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white/80 px-2.5 py-1 text-[11px] font-medium text-gray-600 backdrop-blur">
@@ -1314,7 +1303,6 @@ export default function ModernSaaSDashboard() {
                 <div className="flex flex-wrap items-center gap-2">
                   {!signedIn && (
                     <motion.button
-                      whileHover={{ y: -1 }}
                       whileTap={{ scale: 0.97 }}
                       onClick={() => setOpenDialog("login")}
                       className="btn-shine inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white/90 px-3.5 py-2 text-[13px] font-semibold text-gray-900 hover:border-gray-300 transition-colors"
@@ -1331,7 +1319,6 @@ export default function ModernSaaSDashboard() {
                     <ArrowUpRight size={14} />
                   </button>
                   <motion.button
-                    whileHover={{ y: -1 }}
                     whileTap={{ scale: 0.97 }}
                     onClick={submitAllInFlight}
                     className="group btn-shine inline-flex items-center gap-1.5 rounded-full bg-gray-900 px-4 py-2 text-[13px] font-semibold text-white hover:bg-gray-800 transition-colors"
@@ -1385,8 +1372,7 @@ export default function ModernSaaSDashboard() {
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.45, delay: 0.05 * i }}
-                  whileHover={{ y: -2 }}
-                  className="hover-glow relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5"
+                  className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 transition-shadow duration-200 hover:shadow-sm"
                 >
                   <div className="flex items-center justify-between">
                     <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-600">
@@ -1437,8 +1423,7 @@ export default function ModernSaaSDashboard() {
                       initial={{ opacity: 0, y: 14 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.4, delay: 0.05 * i }}
-                      whileHover={{ y: -3 }}
-                      className="hover-glow relative flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white p-5"
+                      className="relative flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 transition-shadow duration-200 hover:shadow-sm"
                     >
                       <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-amber-500 opacity-70" />
                       <div className="flex items-start justify-between">
