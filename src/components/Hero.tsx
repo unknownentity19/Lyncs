@@ -4,8 +4,8 @@ import Link from "next/link";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import { MessageCircle, ArrowRight, Sparkles } from "lucide-react";
 
-const headlineLead = "Be the first to apply to every job that fits you.";
-const headlineEmphasis = "Hands off.";
+const headlineLead = "Stop applying to jobs.";
+const headlineEmphasis = "Start getting interviews.";
 
 const trustedCompanies = [
   "Stripe",
@@ -50,7 +50,7 @@ export default function Hero() {
       </div>
       <div className="bg-grid bg-grid-fade absolute inset-0 -z-10" />
 
-      {/* iMessage hook + YC badge */}
+      {/* iMessage hook */}
       <div className="max-w-7xl mx-auto px-6 relative">
         <motion.div
           initial={{ opacity: 0, y: 18 }}
@@ -102,9 +102,11 @@ export default function Hero() {
             transition={{ duration: 0.5, delay: 0.55 }}
             className="text-lg sm:text-xl text-muted max-w-3xl mx-auto mb-10 leading-relaxed"
           >
-            Lyncs watches 50,000+ career pages across Workday, Greenhouse,
-            Lever, Ashby and 10+ more ATSes, and submits a tailored résumé the
-            moment a fitting role goes up. Hundreds of applications a week.
+            Lyncs watches Workday, Greenhouse, Lever, Ashby — every ATS that
+            matters — and applies for you the moment a fitting role goes up.
+            Tailored to the job, written in your voice, every step on the
+            record. Spend your evenings prepping for interviews instead of
+            refreshing careers pages.
           </motion.p>
 
           <motion.div
@@ -174,7 +176,7 @@ export default function Hero() {
         aria-hidden={prefersReducedMotion ? undefined : "true"}
       >
         <p className="text-center text-xs uppercase tracking-[0.2em] text-muted/80 mb-5">
-          Submits applications on
+          Recently applied to
         </p>
         <div className="overflow-hidden">
           <div className="marquee gap-12 px-6">
