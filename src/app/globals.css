@@ -32,7 +32,7 @@
   --color-accent-purple: var(--accent-purple);
   --color-accent-pink: var(--accent-pink);
   --color-accent-blue: var(--accent-blue);
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-roboto);
 }
 
 html {
