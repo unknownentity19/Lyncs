@@ -1,24 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { motion, useReducedMotion, type Variants } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { MessageCircle, ArrowRight, Sparkles } from "lucide-react";
 
-const headlineLead = "Stop applying to jobs.";
-const headlineEmphasis = "Start getting interviews.";
-
-const trustedCompanies = [
-  "Stripe",
-  "Notion",
-  "Linear",
-  "Figma",
-  "Vercel",
-  "Ramp",
-  "Anthropic",
-  "Airtable",
-  "Plaid",
-  "Retool",
-];
+const headlineLead = "We handle the forms.";
+const headlineEmphasis = "You show up for the interview.";
 
 const wordContainer: Variants = {
   hidden: {},
@@ -38,8 +25,6 @@ const wordItem: Variants = {
 };
 
 export default function Hero() {
-  const prefersReducedMotion = useReducedMotion();
-
   return (
     <section className="relative pt-24 pb-12 overflow-hidden">
       {/* Atmosphere */}
@@ -102,11 +87,11 @@ export default function Hero() {
             transition={{ duration: 0.5, delay: 0.55 }}
             className="text-lg sm:text-xl text-muted max-w-3xl mx-auto mb-10 leading-relaxed"
           >
-            Lyncs watches Workday, Greenhouse, Lever, Ashby — every ATS that
-            matters — and applies for you the moment a fitting role goes up.
-            Tailored to the job, written in your voice, every step on the
-            record. Spend your evenings prepping for interviews instead of
-            refreshing careers pages.
+            Lyncs watches Workday, Greenhouse, Lever, Ashby. When a job opens
+            that you&rsquo;d actually want, it drafts a résumé for it, answers
+            the screening questions, and submits. Usually within five minutes
+            of the role going up. You see what it sent. You can change anything
+            you don&rsquo;t like.
           </motion.p>
 
           <motion.div
@@ -167,30 +152,6 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Trusted-by marquee */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, delay: 1 }}
-        className="mt-16 marquee-mask"
-        aria-hidden={prefersReducedMotion ? undefined : "true"}
-      >
-        <p className="text-center text-xs uppercase tracking-[0.2em] text-muted/80 mb-5">
-          Recently applied to
-        </p>
-        <div className="overflow-hidden">
-          <div className="marquee gap-12 px-6">
-            {[...trustedCompanies, ...trustedCompanies].map((name, i) => (
-              <span
-                key={`${name}-${i}`}
-                className="text-base sm:text-lg font-semibold text-muted/70 hover:text-foreground transition-colors whitespace-nowrap"
-              >
-                {name}
-              </span>
-            ))}
-          </div>
-        </div>
-      </motion.div>
     </section>
   );
 }
