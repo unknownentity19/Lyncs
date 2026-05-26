@@ -1,13 +1,6 @@
 "use client";
 
-import { useRef } from "react";
-import {
-  motion,
-  useMotionValue,
-  useReducedMotion,
-  useSpring,
-  useTransform,
-} from "framer-motion";
+import { motion } from "framer-motion";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -82,34 +75,6 @@ const previewStats = [
 ];
 
 export default function DashboardShowcase() {
-  const prefersReducedMotion = useReducedMotion();
-  const wrapRef = useRef<HTMLDivElement>(null);
-
-  // Mouse-tilt parallax
-  const mx = useMotionValue(0);
-  const my = useMotionValue(0);
-  const rotateX = useSpring(useTransform(my, [-0.5, 0.5], [4, -4]), {
-    stiffness: 120,
-    damping: 14,
-  });
-  const rotateY = useSpring(useTransform(mx, [-0.5, 0.5], [-6, 6]), {
-    stiffness: 120,
-    damping: 14,
-  });
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (prefersReducedMotion) return;
-    const rect = wrapRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    mx.set((e.clientX - rect.left) / rect.width - 0.5);
-    my.set((e.clientY - rect.top) / rect.height - 0.5);
-  };
-
-  const handleMouseLeave = () => {
-    mx.set(0);
-    my.set(0);
-  };
-
   return (
     <section className="relative py-24 px-6 overflow-hidden">
       {/* Soft section background */}
@@ -137,28 +102,18 @@ export default function DashboardShowcase() {
           </p>
         </motion.div>
 
-        {/* Dashboard preview wrapper (tilt parent) */}
+        {/* Dashboard preview wrapper */}
         <motion.div
-          ref={wrapRef}
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          onMouseMove={handleMouseMove}
-          onMouseLeave={handleMouseLeave}
-          style={{ perspective: 1400 }}
           className="relative"
         >
           {/* Halo background */}
           <div className="absolute inset-0 -z-10 -m-6 rounded-[34px] bg-gradient-to-r from-indigo-500/20 via-pink-500/20 to-amber-500/20 blur-3xl opacity-50" />
 
-          {/* Tilted container */}
-          <motion.div
-            style={
-              prefersReducedMotion
-                ? undefined
-                : { rotateX, rotateY, transformStyle: "preserve-3d" }
-            }
+          <div
             className="rounded-3xl border border-gray-200 bg-white shadow-[0_30px_60px_-20px_rgba(15,23,42,0.25)] overflow-hidden"
           >
             {/* Browser chrome */}
@@ -340,7 +295,7 @@ export default function DashboardShowcase() {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
         </motion.div>
 
         {/* CTA */}

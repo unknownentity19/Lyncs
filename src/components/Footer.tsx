@@ -16,6 +16,7 @@ const footerLinks = {
     { label: "MCP / CLI", href: "/mcp" },
   ],
   Company: [
+    { label: "About", href: "/about" },
     {
       label: "Jobs",
       href: "mailto:founders@lyncs.com?subject=Jobs%20at%20Lyncs",
