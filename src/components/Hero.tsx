@@ -33,7 +33,7 @@ export default function Hero() {
         <span className="aurora__blob aurora__blob--b" />
         <span className="aurora__blob aurora__blob--c" />
       </div>
-      <div className="bg-grid bg-grid-fade absolute inset-0 -z-10" />
+      <div className="bg-dots bg-grid-fade absolute inset-0 -z-10" />
 
       {/* iMessage hook */}
       <div className="max-w-7xl mx-auto px-6 relative">
